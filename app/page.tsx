@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { ThemeSwitcher } from "@/components/theme-switcher";
 
 // Lazy load the heavy WorldMapDemo component
 const WorldMapDemo = dynamic(() => import("@/components/ui/world-map-demo"), {
@@ -47,6 +48,7 @@ export default function Home() {
             >
               Need Help
             </Link>
+            <ThemeSwitcher />
           </nav>
         </div>
       </header>
