@@ -24,6 +24,8 @@ import {
   X,
   Tent,
   Ambulance,
+  Menu,
+  ChevronLeft,
 } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import dynamic from "next/dynamic";
@@ -54,6 +56,7 @@ export default function HelpPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showEmergencyBanner, setShowEmergencyBanner] = useState(true);
   const [selectedSection, setSelectedSection] = useState("emergency");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -674,10 +677,43 @@ export default function HelpPage() {
         </div>
       </header>
 
-      <main className="flex min-h-screen">
+      <main className="flex min-h-screen relative">
+        {/* Mobile Overlay */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
         {/* Sidebar */}
-        <div className="w-80 bg-muted/30 border-r min-h-screen p-6">
-          <div className="mb-8">
+        <div
+          className={`${
+            sidebarOpen ? "w-80 translate-x-0" : "w-0 -translate-x-full"
+          } bg-muted/30 border-r min-h-screen p-6 transition-all duration-300 ease-in-out overflow-hidden fixed lg:relative z-50 lg:z-auto`}
+        >
+          {/* Mobile Close Button */}
+          <div className="flex justify-between items-center mb-8 lg:hidden">
+            <div>
+              <h2 className="text-xl font-bold text-foreground mb-2">
+                Help & Support
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Navigate to different support areas
+              </p>
+            </div>
+            <Button
+              onClick={() => setSidebarOpen(false)}
+              variant="ghost"
+              size="sm"
+              className="lg:hidden"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+
+          {/* Desktop Header */}
+          <div className="mb-8 hidden lg:block">
             <h2 className="text-xl font-bold text-foreground mb-2">
               Help & Support
             </h2>
@@ -788,7 +824,34 @@ export default function HelpPage() {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 p-8">{renderContent()}</div>
+        <div
+          className={`flex-1 p-8 transition-all duration-300 ease-in-out ${
+            sidebarOpen ? "ml-0" : "ml-0"
+          }`}
+        >
+          {/* Toggle Button */}
+          <div className="mb-6">
+            <Button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2"
+            >
+              {sidebarOpen ? (
+                <>
+                  <ChevronLeft className="w-4 h-4" />
+                  Hide Sidebar
+                </>
+              ) : (
+                <>
+                  <Menu className="w-4 h-4" />
+                  Show Sidebar
+                </>
+              )}
+            </Button>
+          </div>
+          {renderContent()}
+        </div>
       </main>
 
       {/* Sonner Toaster */}
