@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import { useTheme } from "next-themes";
 
 interface MapProps {
   dots?: Array<{
@@ -15,26 +16,35 @@ export default function WorldMap({
   lineColor = "#ff0000",
 }: MapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const { theme } = useTheme();
+
   // Reference props to satisfy lint while keeping API stable
   void dots?.length;
   void lineColor;
 
+  // Determine which SVG to load based on theme
+  const getMapSvg = () => {
+    if (theme === "dark") {
+      return "/india-map-dark.svg";
+    }
+    return "/india-map-light.svg";
+  };
+
   return (
     <div ref={containerRef} className="w-full h-full relative font-sans">
       {/* Pre-loaded world map SVG */}
-      <div 
+      <div
         className="absolute inset-0 opacity-80"
         style={{
-          backgroundImage: 'url("/india-map.svg")',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat'
+          backgroundImage: `url("${getMapSvg()}")`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
         }}
       />
-      
+
       {/* Connection lines and dots */}
-     
-      
+
       {/* CSS animations with hardware acceleration */}
       <style jsx>{`
         @keyframes fadeInLine {
@@ -47,7 +57,7 @@ export default function WorldMap({
             transform: scaleX(1) rotate(var(--angle));
           }
         }
-        
+
         @keyframes fadeInPoint {
           from {
             opacity: 0;
@@ -58,7 +68,7 @@ export default function WorldMap({
             transform: translate(-50%, -50%) scale(1);
           }
         }
-        
+
         /* Hardware acceleration for smooth animations */
         .absolute {
           will-change: transform, opacity;
