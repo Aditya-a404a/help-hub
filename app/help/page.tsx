@@ -3,10 +3,28 @@
 import { useState } from "react";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import Link from "next/link";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, Info, Phone, Mail, MapPin, Clock, Users, Shield, X, Tent, Ambulance } from "lucide-react";
+import {
+  AlertTriangle,
+  Info,
+  Phone,
+  Mail,
+  MapPin,
+  Clock,
+  Users,
+  Shield,
+  X,
+  Tent,
+  Ambulance,
+} from "lucide-react";
 import { toast, Toaster } from "sonner";
 import dynamic from "next/dynamic";
 
@@ -25,23 +43,27 @@ const MapComponent = dynamic(() => import("@/components/emergency-map"), {
 
 export default function HelpPage() {
   const [formData, setFormData] = useState({
-    mobileNumber: '',
-    emergencyType: 'Natural Disaster',
-    description: '',
-    latitude: '',
-    longitude: '',
-    locationCaptured: false
+    mobileNumber: "",
+    emergencyType: "Natural Disaster",
+    description: "",
+    latitude: "",
+    longitude: "",
+    locationCaptured: false,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showEmergencyBanner, setShowEmergencyBanner] = useState(true);
-  const [selectedSection, setSelectedSection] = useState('emergency');
+  const [selectedSection, setSelectedSection] = useState("emergency");
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -51,22 +73,24 @@ export default function HelpPage() {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
-          setFormData(prev => ({
+          setFormData((prev) => ({
             ...prev,
             latitude: latitude.toString(),
             longitude: longitude.toString(),
-            locationCaptured: true
+            locationCaptured: true,
           }));
           setIsSubmitting(false);
-          toast.success('Location acquired successfully', {
-            description: `Coordinates: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
+          toast.success("Location acquired successfully", {
+            description: `Coordinates: ${latitude.toFixed(
+              4
+            )}, ${longitude.toFixed(4)}`,
             duration: 4000,
           });
         },
         (error) => {
-          console.error('Error getting location:', error);
-          toast.error('Unable to acquire location', {
-            description: 'Please enter coordinates manually or try again.',
+          console.error("Error getting location:", error);
+          toast.error("Unable to acquire location", {
+            description: "Please enter coordinates manually or try again.",
             duration: 4000,
           });
           setIsSubmitting(false);
@@ -74,12 +98,12 @@ export default function HelpPage() {
         {
           enableHighAccuracy: true,
           timeout: 10000,
-          maximumAge: 60000
+          maximumAge: 60000,
         }
       );
     } else {
-      toast.error('Geolocation not supported', {
-        description: 'Your browser does not support location services.',
+      toast.error("Geolocation not supported", {
+        description: "Your browser does not support location services.",
         duration: 4000,
       });
     }
@@ -88,31 +112,31 @@ export default function HelpPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.mobileNumber || !formData.description) {
-      alert('Please fill in all required fields');
+      alert("Please fill in all required fields");
       return;
     }
-    
+
     if (!formData.latitude || !formData.longitude) {
-      alert('Please provide your location coordinates');
+      alert("Please provide your location coordinates");
       return;
     }
 
     setIsSubmitting(true);
-    
+
     // Simulate API call
     setTimeout(() => {
-      console.log('Emergency alert submitted:', formData);
-      alert('Emergency alert sent! Response teams have been notified.');
+      console.log("Emergency alert submitted:", formData);
+      alert("Emergency alert sent! Response teams have been notified.");
       setIsSubmitting(false);
       // Close banner and reset form
       setShowEmergencyBanner(false);
       setFormData({
-        mobileNumber: '',
-        emergencyType: 'Natural Disaster',
-        description: '',
-        latitude: '',
-        longitude: '',
-        locationCaptured: false
+        mobileNumber: "",
+        emergencyType: "Natural Disaster",
+        description: "",
+        latitude: "",
+        longitude: "",
+        locationCaptured: false,
       });
     }, 2000);
   };
@@ -123,13 +147,16 @@ export default function HelpPage() {
 
   const renderContent = () => {
     switch (selectedSection) {
-      case 'emergency':
+      case "emergency":
         return (
           <div>
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-foreground mb-4">Emergency Assistance</h1>
+              <h1 className="text-3xl font-bold text-foreground mb-4">
+                Emergency Assistance
+              </h1>
               <p className="text-lg text-muted-foreground">
-                Need immediate help? Fill out the emergency form below to get assistance quickly.
+                Need immediate help? Fill out the emergency form below to get
+                assistance quickly.
               </p>
             </div>
 
@@ -137,8 +164,10 @@ export default function HelpPage() {
             <Alert className="mb-8 border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-800">
               <AlertTriangle className="h-4 w-4 text-red-600" />
               <AlertDescription className="text-red-800 dark:text-red-200">
-                <strong>Emergency?</strong> If you&apos;re in immediate danger, call 911 or your local emergency services immediately. 
-                This platform is for coordination and should not replace emergency calls.
+                <strong>Emergency?</strong> If you&apos;re in immediate danger,
+                call 911 or your local emergency services immediately. This
+                platform is for coordination and should not replace emergency
+                calls.
               </AlertDescription>
             </Alert>
 
@@ -157,7 +186,10 @@ export default function HelpPage() {
             {/* Emergency Form Modal */}
             {showEmergencyBanner && (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-8">
-                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeEmergencyBanner}></div>
+                <div
+                  className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                  onClick={closeEmergencyBanner}
+                ></div>
                 <div className="relative bg-background border rounded-xl shadow-2xl max-w-4xl w-full p-10">
                   {/* Close Button */}
                   <button
@@ -176,7 +208,8 @@ export default function HelpPage() {
                       Emergency Assistance Required
                     </h2>
                     <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-                      Please provide your location and contact information so we can dispatch emergency response immediately
+                      Please provide your location and contact information so we
+                      can dispatch emergency response immediately
                     </p>
                   </div>
 
@@ -188,8 +221,8 @@ export default function HelpPage() {
                         <label className="block text-sm font-medium text-foreground mb-2">
                           Mobile Number *
                         </label>
-                        <input 
-                          type="tel" 
+                        <input
+                          type="tel"
                           name="mobileNumber"
                           value={formData.mobileNumber}
                           onChange={handleInputChange}
@@ -203,7 +236,7 @@ export default function HelpPage() {
                         <label className="block text-sm font-medium text-foreground mb-2">
                           Emergency Type
                         </label>
-                        <select 
+                        <select
                           name="emergencyType"
                           value={formData.emergencyType}
                           onChange={handleInputChange}
@@ -221,7 +254,7 @@ export default function HelpPage() {
                         <label className="block text-sm font-medium text-foreground mb-2">
                           Brief Description
                         </label>
-                        <input 
+                        <input
                           type="text"
                           name="description"
                           value={formData.description}
@@ -240,13 +273,14 @@ export default function HelpPage() {
                           Location Information
                         </h3>
                         <p className="text-sm text-muted-foreground">
-                          We need your exact location to dispatch emergency response quickly
+                          We need your exact location to dispatch emergency
+                          response quickly
                         </p>
                       </div>
-                      
+
                       <div className="flex items-center justify-center">
-                        <Button 
-                          type="button" 
+                        <Button
+                          type="button"
                           onClick={handleGetLocation}
                           disabled={isSubmitting}
                           variant="outline"
@@ -258,9 +292,7 @@ export default function HelpPage() {
                               Acquiring Location...
                             </>
                           ) : (
-                            <>
-                              Acquire My Location
-                            </>
+                            <>Acquire My Location</>
                           )}
                         </Button>
                       </div>
@@ -270,13 +302,18 @@ export default function HelpPage() {
                     <div className="text-center space-y-3">
                       <div className="bg-red-50 dark:bg-red-900/10 p-3 rounded-lg border border-red-200 dark:border-red-800">
                         <p className="text-xs text-red-700 dark:text-red-300 font-medium">
-                          This will immediately notify emergency services response team
+                          This will immediately notify emergency services
+                          response team
                         </p>
                       </div>
 
-                      <Button 
-                        type="submit" 
-                        disabled={isSubmitting || !formData.latitude || !formData.longitude}
+                      <Button
+                        type="submit"
+                        disabled={
+                          isSubmitting ||
+                          !formData.latitude ||
+                          !formData.longitude
+                        }
                         className="bg-red-600 hover:bg-red-700 text-white border-red-600 text-lg py-4 px-10 font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all rounded-xl"
                       >
                         {isSubmitting ? (
@@ -285,7 +322,7 @@ export default function HelpPage() {
                             Sending Emergency Alert...
                           </>
                         ) : (
-                          'SEND EMERGENCY ALERT'
+                          "SEND EMERGENCY ALERT"
                         )}
                       </Button>
                     </div>
@@ -296,11 +333,13 @@ export default function HelpPage() {
           </div>
         );
 
-      case 'relief-camps':
+      case "relief-camps":
         return (
           <div>
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-foreground mb-4">Relief Camps</h1>
+              <h1 className="text-3xl font-bold text-foreground mb-4">
+                Relief Camps
+              </h1>
               <p className="text-lg text-muted-foreground">
                 Find nearby relief camps and emergency shelters in your area.
               </p>
@@ -308,30 +347,39 @@ export default function HelpPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Relief Camp Information</CardTitle>
-                <CardDescription>Coming soon - Interactive map and real-time data</CardDescription>
+                <CardDescription>
+                  Coming soon - Interactive map and real-time data
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">This section will show relief camps, their capacity, and current status.</p>
+                <p className="text-muted-foreground">
+                  This section will show relief camps, their capacity, and
+                  current status.
+                </p>
               </CardContent>
             </Card>
           </div>
         );
 
-      case 'safe-points':
+      case "safe-points":
         return (
           <div>
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-foreground mb-4">Safe Points & Assembly Areas</h1>
+              <h1 className="text-3xl font-bold text-foreground mb-4">
+                Safe Points & Assembly Areas
+              </h1>
               <p className="text-lg text-muted-foreground">
                 Locate designated safe zones and emergency assembly points.
               </p>
             </div>
-            
+
             {/* Interactive Map */}
             <Card className="mb-6">
               <CardHeader>
                 <CardTitle>Emergency Safe Points Map</CardTitle>
-                <CardDescription>Your location and nearby safe zones</CardDescription>
+                <CardDescription>
+                  Your location and nearby safe zones
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <MapComponent />
@@ -346,7 +394,9 @@ export default function HelpPage() {
                     <Shield className="w-5 h-5 text-green-600" />
                     Community Center
                   </CardTitle>
-                  <CardDescription>Primary assembly point with reinforced structures</CardDescription>
+                  <CardDescription>
+                    Primary assembly point with reinforced structures
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -372,7 +422,9 @@ export default function HelpPage() {
                     <Shield className="w-5 h-5 text-green-600" />
                     High School Gymnasium
                   </CardTitle>
-                  <CardDescription>Designated storm shelter with medical facilities</CardDescription>
+                  <CardDescription>
+                    Designated storm shelter with medical facilities
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -398,7 +450,9 @@ export default function HelpPage() {
                     <Shield className="w-5 h-5 text-green-600" />
                     City Hall
                   </CardTitle>
-                  <CardDescription>Emergency operations command center</CardDescription>
+                  <CardDescription>
+                    Emergency operations command center
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -424,7 +478,9 @@ export default function HelpPage() {
                     <Shield className="w-5 h-5 text-green-600" />
                     Public Library
                   </CardTitle>
-                  <CardDescription>Emergency shelter with backup power</CardDescription>
+                  <CardDescription>
+                    Emergency shelter with backup power
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -447,11 +503,13 @@ export default function HelpPage() {
           </div>
         );
 
-      case 'emergency-services':
+      case "emergency-services":
         return (
           <div>
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-foreground mb-4">Emergency Services</h1>
+              <h1 className="text-3xl font-bold text-foreground mb-4">
+                Emergency Services
+              </h1>
               <p className="text-lg text-muted-foreground">
                 Access emergency medical, fire, police, and rescue services.
               </p>
@@ -459,62 +517,85 @@ export default function HelpPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Emergency Services Directory</CardTitle>
-                <CardDescription>Coming soon - Response times and contact information</CardDescription>
+                <CardDescription>
+                  Coming soon - Response times and contact information
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">This section will list all available emergency services in your area.</p>
+                <p className="text-muted-foreground">
+                  This section will list all available emergency services in
+                  your area.
+                </p>
               </CardContent>
             </Card>
           </div>
         );
 
-      case 'training':
+      case "training":
         return (
           <div>
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-foreground mb-4">Training & Resources</h1>
+              <h1 className="text-3xl font-bold text-foreground mb-4">
+                Training & Resources
+              </h1>
               <p className="text-lg text-muted-foreground">
-                Learn emergency response protocols and access training materials.
+                Learn emergency response protocols and access training
+                materials.
               </p>
             </div>
             <Card>
               <CardHeader>
                 <CardTitle>Training Resources</CardTitle>
-                <CardDescription>Coming soon - Safety protocols and certification programs</CardDescription>
+                <CardDescription>
+                  Coming soon - Safety protocols and certification programs
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">This section will provide training materials and safety protocols.</p>
+                <p className="text-muted-foreground">
+                  This section will provide training materials and safety
+                  protocols.
+                </p>
               </CardContent>
             </Card>
           </div>
         );
 
-      case 'faq':
+      case "faq":
         return (
           <div>
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-foreground mb-4">Frequently Asked Questions</h1>
+              <h1 className="text-3xl font-bold text-foreground mb-4">
+                Frequently Asked Questions
+              </h1>
               <p className="text-lg text-muted-foreground">
-                Find answers to common questions about emergency response and platform usage.
+                Find answers to common questions about emergency response and
+                platform usage.
               </p>
             </div>
             <Card>
               <CardHeader>
                 <CardTitle>Common Questions</CardTitle>
-                <CardDescription>Coming soon - Comprehensive FAQ database</CardDescription>
+                <CardDescription>
+                  Coming soon - Comprehensive FAQ database
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground">This section will contain frequently asked questions and answers.</p>
+                <p className="text-muted-foreground">
+                  This section will contain frequently asked questions and
+                  answers.
+                </p>
               </CardContent>
             </Card>
           </div>
         );
 
-      case 'contact':
+      case "contact":
         return (
           <div>
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-foreground mb-4">Contact Support</h1>
+              <h1 className="text-3xl font-bold text-foreground mb-4">
+                Contact Support
+              </h1>
               <p className="text-lg text-muted-foreground">
                 Get in touch with our support team for assistance and inquiries.
               </p>
@@ -522,28 +603,36 @@ export default function HelpPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Support Channels</CardTitle>
-                <CardDescription>Multiple ways to reach our support team</CardDescription>
+                <CardDescription>
+                  Multiple ways to reach our support team
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-3">
                   <Phone className="w-5 h-5 text-muted-foreground" />
                   <div>
                     <p className="font-medium">Phone Support</p>
-                    <p className="text-sm text-muted-foreground">+1 (555) 123-4567</p>
+                    <p className="text-sm text-muted-foreground">
+                      +1 (555) 123-4567
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Mail className="w-5 h-5 text-muted-foreground" />
                   <div>
                     <p className="font-medium">Email Support</p>
-                    <p className="text-sm text-muted-foreground">support@infyrescue.com</p>
+                    <p className="text-sm text-muted-foreground">
+                      support@infyrescue.com
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Clock className="w-5 h-5 text-muted-foreground" />
                   <div>
                     <p className="font-medium">Support Hours</p>
-                    <p className="text-sm text-muted-foreground">24/7 Emergency Support</p>
+                    <p className="text-sm text-muted-foreground">
+                      24/7 Emergency Support
+                    </p>
                   </div>
                 </div>
               </CardContent>
@@ -561,11 +650,17 @@ export default function HelpPage() {
       {/* Header */}
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/" className="text-2xl font-bold text-foreground hover:text-primary transition-colors">
+          <Link
+            href="/"
+            className="text-2xl font-bold text-foreground hover:text-primary transition-colors"
+          >
             InfyRescue
           </Link>
           <nav className="flex items-center gap-6">
-            <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link
+              href="/dashboard"
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
               Dashboard
             </Link>
             <button
@@ -583,17 +678,21 @@ export default function HelpPage() {
         {/* Sidebar */}
         <div className="w-80 bg-muted/30 border-r min-h-screen p-6">
           <div className="mb-8">
-            <h2 className="text-xl font-bold text-foreground mb-2">Help & Support</h2>
-            <p className="text-sm text-muted-foreground">Navigate to different support areas</p>
+            <h2 className="text-xl font-bold text-foreground mb-2">
+              Help & Support
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Navigate to different support areas
+            </p>
           </div>
-          
+
           <nav className="space-y-2">
             <button
-              onClick={() => setSelectedSection('emergency')}
+              onClick={() => setSelectedSection("emergency")}
               className={`w-full text-left p-3 rounded-lg transition-all ${
-                selectedSection === 'emergency' 
-                  ? 'bg-primary text-primary-foreground shadow-md' 
-                  : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
+                selectedSection === "emergency"
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -603,11 +702,11 @@ export default function HelpPage() {
             </button>
 
             <button
-              onClick={() => setSelectedSection('relief-camps')}
+              onClick={() => setSelectedSection("relief-camps")}
               className={`w-full text-left p-3 rounded-lg transition-all ${
-                selectedSection === 'relief-camps' 
-                  ? 'bg-primary text-primary-foreground shadow-md' 
-                  : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
+                selectedSection === "relief-camps"
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -617,11 +716,11 @@ export default function HelpPage() {
             </button>
 
             <button
-              onClick={() => setSelectedSection('safe-points')}
+              onClick={() => setSelectedSection("safe-points")}
               className={`w-full text-left p-3 rounded-lg transition-all ${
-                selectedSection === 'safe-points' 
-                  ? 'bg-primary text-primary-foreground shadow-md' 
-                  : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
+                selectedSection === "safe-points"
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -631,11 +730,11 @@ export default function HelpPage() {
             </button>
 
             <button
-              onClick={() => setSelectedSection('emergency-services')}
+              onClick={() => setSelectedSection("emergency-services")}
               className={`w-full text-left p-3 rounded-lg transition-all ${
-                selectedSection === 'emergency-services' 
-                  ? 'bg-primary text-primary-foreground shadow-md' 
-                  : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
+                selectedSection === "emergency-services"
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -645,11 +744,11 @@ export default function HelpPage() {
             </button>
 
             <button
-              onClick={() => setSelectedSection('training')}
+              onClick={() => setSelectedSection("training")}
               className={`w-full text-left p-3 rounded-lg transition-all ${
-                selectedSection === 'training' 
-                  ? 'bg-primary text-primary-foreground shadow-md' 
-                  : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
+                selectedSection === "training"
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -659,11 +758,11 @@ export default function HelpPage() {
             </button>
 
             <button
-              onClick={() => setSelectedSection('faq')}
+              onClick={() => setSelectedSection("faq")}
               className={`w-full text-left p-3 rounded-lg transition-all ${
-                selectedSection === 'faq' 
-                  ? 'bg-primary text-primary-foreground shadow-md' 
-                  : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
+                selectedSection === "faq"
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -673,11 +772,11 @@ export default function HelpPage() {
             </button>
 
             <button
-              onClick={() => setSelectedSection('contact')}
+              onClick={() => setSelectedSection("contact")}
               className={`w-full text-left p-3 rounded-lg transition-all ${
-                selectedSection === 'contact' 
-                  ? 'bg-primary text-primary-foreground shadow-md' 
-                  : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
+                selectedSection === "contact"
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -689,24 +788,22 @@ export default function HelpPage() {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 p-8">
-          {renderContent()}
-        </div>
+        <div className="flex-1 p-8">{renderContent()}</div>
       </main>
 
       {/* Sonner Toaster */}
-      <Toaster 
+      <Toaster
         position="top-right"
         richColors
         closeButton
         duration={4000}
         toastOptions={{
           style: {
-            background: '#166534',
-            color: '#ffffff',
-            border: '1px solid #15803d'
+            background: "#166534",
+            color: "#ffffff",
+            border: "1px solid #15803d",
           },
-          className: 'dark:bg-green-800 dark:border-green-700'
+          className: "dark:bg-green-800 dark:border-green-700",
         }}
       />
     </div>
