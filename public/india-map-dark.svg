@@ -31,14 +31,14 @@
      id="defs42" />
   <style>
     path {
-      fill: rgba(0, 0, 0, 0.1);
-      stroke: #000000;
+      fill: rgba(255, 255, 255, 0.1);
+      stroke: #ffffff;
       stroke-width: 1;
       transition: all 0.3s ease;
     }
     path:hover {
-      fill: rgba(0, 0, 0, 0.2);
-      stroke: #374151;
+      fill: rgba(255, 255, 255, 0.2);
+      stroke: #e5e7eb;
       stroke-width: 2;
     }
   </style>
