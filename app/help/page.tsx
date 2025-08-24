@@ -35,17 +35,20 @@ import { disasterAPI, Amenity, ReliefCenter } from "@/lib/disaster-api";
 import { useAuth } from "@/lib/hooks/useAuth";
 
 // Dynamically import the map components to avoid SSR issues
-const EmergencyMapComponent = dynamic(() => import("@/components/emergency-map"), {
-  ssr: false,
-  loading: () => (
-    <div className="h-96 bg-muted/20 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-        <p className="text-muted-foreground">Loading emergency map...</p>
+const EmergencyMapComponent = dynamic(
+  () => import("@/components/emergency-map"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-96 bg-muted/20 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+          <p className="text-muted-foreground">Loading emergency map...</p>
+        </div>
       </div>
-    </div>
-  ),
-});
+    ),
+  }
+);
 
 const IndiaMapComponent = dynamic(() => import("@/components/ui/india-map"), {
   ssr: false,
@@ -81,25 +84,30 @@ export default function HelpPage() {
 
   // Load real data from APIs
   const loadEmergencyData = useCallback(async () => {
-    if (!isAuthenticated) return;
-
     try {
       // Load amenities
-      const amenitiesResponse = await disasterAPI.getAmenities(undefined, 'active', 20);
+      const amenitiesResponse = await disasterAPI.getAmenities(
+        undefined,
+        "active",
+        20
+      );
       if (amenitiesResponse.success) {
         setAmenities(amenitiesResponse.data);
       }
 
       // Load relief centers
-      const reliefCentersResponse = await disasterAPI.getReliefCenters('Chennai', true);
+      const reliefCentersResponse = await disasterAPI.getReliefCenters(
+        "Chennai",
+        true
+      );
       if (reliefCentersResponse.success) {
         setReliefCenters(reliefCentersResponse.data);
       }
     } catch (error) {
-      console.error('Error loading emergency data:', error);
-      toast.error('Failed to load emergency data');
+      console.error("Error loading emergency data:", error);
+      toast.error("Failed to load emergency data");
     }
-  }, [isAuthenticated]);
+  }, []);
 
   useEffect(() => {
     loadEmergencyData();
@@ -175,7 +183,7 @@ export default function HelpPage() {
 
     try {
       // If user is authenticated, try to create a flood alert through the API
-      if (isAuthenticated && formData.emergencyType === 'Natural Disaster') {
+      if (isAuthenticated && formData.emergencyType === "Natural Disaster") {
         const latitude = parseFloat(formData.latitude);
         const longitude = parseFloat(formData.longitude);
 
@@ -183,22 +191,22 @@ export default function HelpPage() {
         const alertResponse = await disasterAPI.createFloodAlert({
           latitude,
           longitude,
-          district: 'Chennai',
-          severity_level: 'medium',
+          district: "Chennai",
+          severity_level: "medium",
           flood_probability: 0.6,
           affected_area_km2: 5,
-          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours from now
+          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
         });
 
         if (alertResponse.success) {
-          toast.success('Emergency alert created and sent to response teams!');
+          toast.success("Emergency alert created and sent to response teams!");
         }
       }
 
       console.log("Emergency alert submitted:", formData);
       alert("Emergency alert sent! Response teams have been notified.");
     } catch (error) {
-      console.error('Error submitting emergency alert:', error);
+      console.error("Error submitting emergency alert:", error);
       alert("Emergency alert sent! Response teams have been notified.");
     } finally {
       setIsSubmitting(false);
@@ -424,7 +432,8 @@ export default function HelpPage() {
               <CardHeader>
                 <CardTitle>India Relief Camps & Emergency Services</CardTitle>
                 <CardDescription>
-                  Interactive map showing relief camps, safe zones, and emergency services across India
+                  Interactive map showing relief camps, safe zones, and
+                  emergency services across India
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -436,7 +445,7 @@ export default function HelpPage() {
 
             {/* Relief Camp Information */}
             <div className="grid md:grid-cols-2 gap-6">
-              {isAuthenticated && reliefCenters.length > 0 ? (
+              {reliefCenters.length > 0 ? (
                 reliefCenters.slice(0, 4).map((center) => (
                   <Card key={center.id}>
                     <CardHeader>
@@ -456,7 +465,10 @@ export default function HelpPage() {
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Users className="w-4 h-4" />
-                          <span>Capacity: {center.capacity} people ({center.current_occupancy} occupied)</span>
+                          <span>
+                            Capacity: {center.capacity} people (
+                            {center.current_occupancy} occupied)
+                          </span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Phone className="w-4 h-4" />
@@ -464,7 +476,9 @@ export default function HelpPage() {
                         </div>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Shield className="w-4 h-4" />
-                          <span>Status: {center.is_active ? 'Active' : 'Inactive'}</span>
+                          <span>
+                            Status: {center.is_active ? "Active" : "Inactive"}
+                          </span>
                         </div>
                       </div>
                     </CardContent>
@@ -476,13 +490,10 @@ export default function HelpPage() {
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <Shield className="w-5 h-5 text-green-600" />
-                        {isAuthenticated ? 'No relief centers found' : 'Sign in for real data'}
+                        No relief centers found
                       </CardTitle>
                       <CardDescription>
-                        {isAuthenticated
-                          ? 'No relief centers are currently registered'
-                          : 'Authenticate to access real-time relief center information'
-                        }
+                        No relief centers are currently registered
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -578,14 +589,14 @@ export default function HelpPage() {
 
             {/* Safe Points List */}
             <div className="grid md:grid-cols-2 gap-6">
-              {isAuthenticated && amenities.length > 0 ? (
+              {amenities.length > 0 ? (
                 amenities.slice(0, 4).map((amenity) => (
                   <Card key={amenity._id}>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        {amenity.amenity_type === 'hospital' ? (
+                        {amenity.amenity_type === "hospital" ? (
                           <Shield className="w-5 h-5 text-red-600" />
-                        ) : amenity.amenity_type === 'school' ? (
+                        ) : amenity.amenity_type === "school" ? (
                           <Shield className="w-5 h-5 text-blue-600" />
                         ) : (
                           <Shield className="w-5 h-5 text-green-600" />
@@ -593,22 +604,30 @@ export default function HelpPage() {
                         {amenity.name}
                       </CardTitle>
                       <CardDescription>
-                        {amenity.amenity_type.replace('_', ' ').toUpperCase()} - {amenity.status}
+                        {amenity.amenity_type.replace("_", " ").toUpperCase()} -{" "}
+                        {amenity.status}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <MapPin className="w-4 h-4" />
-                          <span>Coordinates: {amenity.latitude.toFixed(4)}, {amenity.longitude.toFixed(4)}</span>
+                          <span>
+                            Coordinates: {amenity.latitude.toFixed(4)},{" "}
+                            {amenity.longitude.toFixed(4)}
+                          </span>
                         </div>
                         {amenity.resources && (
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Users className="w-4 h-4" />
                             <span>
-                              {amenity.resources.beds && `${amenity.resources.beds} beds, `}
-                              {amenity.resources.doctors && `${amenity.resources.doctors} doctors`}
-                              {!amenity.resources.beds && !amenity.resources.doctors && 'Resources available'}
+                              {amenity.resources.beds &&
+                                `${amenity.resources.beds} beds, `}
+                              {amenity.resources.doctors &&
+                                `${amenity.resources.doctors} doctors`}
+                              {!amenity.resources.beds &&
+                                !amenity.resources.doctors &&
+                                "Resources available"}
                             </span>
                           </div>
                         )}
@@ -626,13 +645,10 @@ export default function HelpPage() {
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <Shield className="w-5 h-5 text-green-600" />
-                        {isAuthenticated ? 'No amenities found' : 'Sign in for real data'}
+                        No amenities found
                       </CardTitle>
                       <CardDescription>
-                        {isAuthenticated
-                          ? 'No amenities are currently registered'
-                          : 'Authenticate to access real-time amenity information'
-                        }
+                        No amenities are currently registered
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -694,7 +710,8 @@ export default function HelpPage() {
                 Emergency Services
               </h1>
               <p className="text-lg text-muted-foreground">
-                Access emergency medical, fire, police, and rescue services across India.
+                Access emergency medical, fire, police, and rescue services
+                across India.
               </p>
             </div>
 
@@ -703,7 +720,8 @@ export default function HelpPage() {
               <CardHeader>
                 <CardTitle>India Emergency Services Network</CardTitle>
                 <CardDescription>
-                  Interactive map showing emergency services, hospitals, and response teams across India
+                  Interactive map showing emergency services, hospitals, and
+                  response teams across India
                 </CardDescription>
               </CardHeader>
               <CardContent>

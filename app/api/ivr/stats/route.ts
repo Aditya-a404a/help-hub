@@ -1,15 +1,15 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
 // Base URL for the backend API
-const API_BASE_URL = 'https://387b871cc28b.ngrok-free.app/api/v1';
+const API_BASE_URL = "http://localhost:8000/api/v1";
 
 export async function GET() {
   try {
     // Make request to backend API
     const response = await fetch(`${API_BASE_URL}/ivr/stats`, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
@@ -20,8 +20,8 @@ export async function GET() {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error('IVR stats API error:', error);
-    
+    console.error("IVR stats API error:", error);
+
     // Return demo data if backend is unavailable
     return NextResponse.json({
       success: true,
@@ -33,8 +33,8 @@ export async function GET() {
         high_urgency_requests: 45,
         critical_urgency_requests: 23,
         average_response_time_minutes: 8.5,
-        success_rate_percentage: 87.5
-      }
+        success_rate_percentage: 87.5,
+      },
     });
   }
 }

@@ -22,11 +22,6 @@ export default function SocialMediaMonitor({ className }: SocialMediaMonitorProp
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'sos' | 'emergency' | 'high'>('all');
 
   const loadSocialMediaData = async () => {
-    if (!isAuthenticated) {
-      setPosts([]);
-      setStats(null);
-      return;
-    }
 
     setIsLoading(true);
     try {
@@ -66,15 +61,13 @@ export default function SocialMediaMonitor({ className }: SocialMediaMonitorProp
 
   useEffect(() => {
     loadSocialMediaData();
-  }, [isAuthenticated, selectedFilter]);
+  }, [selectedFilter]);
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
-    if (!isAuthenticated) return;
-
     const interval = setInterval(loadSocialMediaData, 30000);
     return () => clearInterval(interval);
-  }, [isAuthenticated, selectedFilter]);
+  }, [selectedFilter]);
 
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
@@ -95,24 +88,7 @@ export default function SocialMediaMonitor({ className }: SocialMediaMonitorProp
     }
   };
 
-  if (!isAuthenticated) {
-    return (
-      <Card className={className}>
-        <CardHeader>
-          <CardTitle className="text-sm flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-blue-600" />
-            Social Media Monitor
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center text-muted-foreground py-4">
-            <MessageSquare className="w-12 h-12 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Sign in to view social media alerts</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+
 
   return (
     <Card className={className}>

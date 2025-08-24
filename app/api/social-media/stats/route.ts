@@ -1,15 +1,15 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
 // Base URL for the backend API
-const API_BASE_URL = 'https://387b871cc28b.ngrok-free.app/api/v1';
+const API_BASE_URL = "http://localhost:8000/api/v1";
 
 export async function GET() {
   try {
     // Make request to backend API
     const response = await fetch(`${API_BASE_URL}/social-media/stats`, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
@@ -20,8 +20,8 @@ export async function GET() {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Social media stats API error:', error);
-    
+    console.error("Social media stats API error:", error);
+
     // Return demo data if backend is unavailable
     return NextResponse.json({
       success: true,
@@ -33,9 +33,9 @@ export async function GET() {
         critical_urgency_posts: 23,
         posts_last_24h: 156,
         posts_last_hour: 12,
-        top_locations: ['Chennai', 'T.Nagar', 'Anna Nagar'],
-        top_hashtags: ['ChennaiFloods', 'Emergency', 'Help']
-      }
+        top_locations: ["Chennai", "T.Nagar", "Anna Nagar"],
+        top_hashtags: ["ChennaiFloods", "Emergency", "Help"],
+      },
     });
   }
 }
