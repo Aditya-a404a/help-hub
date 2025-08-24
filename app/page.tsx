@@ -54,8 +54,6 @@ export default function Home() {
       </header>
 
       <main className="container mx-auto px-4 relative min-h-screen">
-        {/* World Map Background - Extended to cover multiple sections */}
-
         {/* Hero Section with World Map Background */}
         <section className="py-20 text-center relative">
           {/* Hero Content - Higher z-index */}
@@ -135,8 +133,13 @@ export default function Home() {
                     <li className="drop-shadow-md font-medium">
                       Documentation
                     </li>
-                    <li className="drop-shadow-md font-medium">
-                      Training Materials
+                    <li className="drop-shadow-md">
+                      <Link
+                        href="/training"
+                        className="hover:text-foreground transition-colors font-medium"
+                      >
+                        Training Materials
+                      </Link>
                     </li>
                     <li className="drop-shadow-md font-medium">Support</li>
                   </ul>
@@ -161,10 +164,6 @@ export default function Home() {
             </div>
           </footer>
         </section>
-
-        {/* Features Section */}
-
-        {/* About Section */}
       </main>
     </div>
   );
