@@ -4,6 +4,8 @@ import { Suspense } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { useTranslation } from "@/lib/i18n";
 
 // Lazy load the heavy components
 const WorldMapDemo = dynamic(() => import("@/components/ui/world-map-demo"), {
@@ -24,6 +26,8 @@ const IndiaMapComponent = dynamic(() => import("@/components/ui/india-map"), {
 });
 
 export default function Home() {
+  const t = useTranslation();
+
   return (
     <div className="min-h-screen">
       <div
@@ -34,7 +38,7 @@ export default function Home() {
           fallback={
             <div className="w-full h-full bg-muted/20 flex items-center justify-center">
               <div className="text-foreground/80 font-medium">
-                Loading map...
+                {t.loadingMap}
               </div>
             </div>
           }
@@ -51,20 +55,21 @@ export default function Home() {
               href="/dashboard"
               className="text-foreground/80 hover:text-foreground transition-colors font-medium"
             >
-              Helper
+              {t.helper}
             </Link>
             <Link
               href="/gemini-demo"
               className="text-foreground/80 hover:text-foreground transition-colors font-medium"
             >
-              Gemini AI
+              {t.geminiAI}
             </Link>
             <Link
               href="/help"
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90 px-6 py-2 rounded-lg font-medium transition-colors shadow-lg"
             >
-              Need Help
+              {t.needHelp}
             </Link>
+            <LanguageSwitcher />
             <ThemeSwitcher />
           </nav>
         </div>
@@ -78,15 +83,13 @@ export default function Home() {
           {/* Hero Content - Higher z-index */}
           <div className="relative z-20 rounded-lg p-8">
             <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6 drop-shadow-lg">
-              Disaster Response
+              {t.welcomeTitle}
               <br />
               <span className="text-foreground/90">Coordination Hub</span>
             </h1>
 
             <p className="text-xl text-foreground/85 max-w-3xl mx-auto mb-8 leading-relaxed drop-shadow-md font-medium">
-              Real-time disaster response coordination platform that fuses
-              space-based insights and ground-level data for faster, smarter
-              decision-making in crisis situations.
+              {t.welcomeSubtitle}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button className="bg-primary text-primary-foreground px-8 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors shadow-lg">
@@ -203,7 +206,7 @@ export default function Home() {
                 href="/help"
                 className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors shadow-lg"
               >
-                Explore Emergency Resources
+                {t.emergencyResourcesLink}
               </Link>
             </div>
           </div>
