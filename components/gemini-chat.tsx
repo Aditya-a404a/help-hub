@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Send, Bot, User, X, Clock, Users, Package, Shield, Radio, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Loader2, Send, Bot, User, X } from 'lucide-react';
 
 interface Message {
   role: 'user' | 'assistant';

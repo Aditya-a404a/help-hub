@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import Link from "next/link";
 import {
@@ -77,13 +77,11 @@ export default function HelpPage() {
   // Real API data state
   const [amenities, setAmenities] = useState<Amenity[]>([]);
   const [reliefCenters, setReliefCenters] = useState<ReliefCenter[]>([]);
-  const [isLoadingData, setIsLoadingData] = useState(false);
 
   // Load real data from APIs
   const loadEmergencyData = useCallback(async () => {
     if (!isAuthenticated) return;
 
-    setIsLoadingData(true);
     try {
       // Load amenities
       const amenitiesResponse = await disasterAPI.getAmenities(undefined, 'active', 20);
@@ -98,10 +96,7 @@ export default function HelpPage() {
       }
     } catch (error) {
       console.error('Error loading emergency data:', error);
-      setError('Failed to load emergency data');
       toast.error('Failed to load emergency data');
-    } finally {
-      setIsLoadingData(false);
     }
   }, [isAuthenticated]);
 

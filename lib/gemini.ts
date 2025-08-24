@@ -1,10 +1,10 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 
 // Initialize the Gemini API
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export class GeminiService {
-  private model: any;
+  private model: GenerativeModel;
 
   constructor() {
     // Use Gemini 2.0 Flash model

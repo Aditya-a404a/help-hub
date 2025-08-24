@@ -7,7 +7,7 @@ export default function GeminiDemoPage() {
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold mb-4">Gemini AI Integration Demo</h1>
         <p className="text-xl text-gray-600 dark:text-gray-400">
-          Experience Google's Gemini AI in your Next.js application
+          Experience Google&apos;s Gemini AI in your Next.js application
         </p>
       </div>
       

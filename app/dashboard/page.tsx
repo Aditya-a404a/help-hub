@@ -387,24 +387,6 @@ export default function DDMADashboardPage() {
     setIsSearching(false);
   };
 
-  // Handle red banner click to open Gemini chat
-  const handleRedBannerClick = (incident: DisasterAlert) => {
-    setSelectedIncident(incident);
-    setIsGeminiModalOpen(true);
-  };
-
-  // Handle emergency call action
-  const handleEmergencyCall = (incident: DisasterAlert) => {
-    // In a real implementation, this would initiate a call
-    alert(`Emergency call initiated for ${incident.type} at ${incident.location}`);
-  };
-
-  // Handle view location action
-  const handleViewLocation = (incident: DisasterAlert) => {
-    // In a real implementation, this would open a map view
-    alert(`Opening location map for ${incident.location}`);
-  };
-
   // Close Gemini modal
   const closeGeminiModal = () => {
     setIsGeminiModalOpen(false);

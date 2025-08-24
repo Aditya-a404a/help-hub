@@ -6,7 +6,7 @@ interface UseGeminiOptions {
 }
 
 interface UseGeminiReturn {
-  generateContent: (prompt: string, options?: any) => Promise<void>;
+  generateContent: (prompt: string, options?: Record<string, unknown>) => Promise<void>;
   isLoading: boolean;
   error: string | null;
   response: string | null;
@@ -18,7 +18,7 @@ export function useGemini(options: UseGeminiOptions = {}): UseGeminiReturn {
   const [error, setError] = useState<string | null>(null);
   const [response, setResponse] = useState<string | null>(null);
 
-  const generateContent = useCallback(async (prompt: string, generationOptions?: any) => {
+  const generateContent = useCallback(async (prompt: string, generationOptions?: Record<string, unknown>) => {
     setIsLoading(true);
     setError(null);
     setResponse(null);

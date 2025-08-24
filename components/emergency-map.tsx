@@ -308,7 +308,6 @@ interface DangerZone {
           features: [
             `Capacity: ${center.capacity} people`,
             `Occupancy: ${center.current_occupancy}`,
-            center.contact ? `Contact: ${center.contact}` : '',
             center.is_active ? 'Active' : 'Inactive'
           ].filter(Boolean),
           type: 'relief-center'
