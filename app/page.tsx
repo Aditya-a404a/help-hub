@@ -1,13 +1,24 @@
+"use client";
+
 import { Suspense } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 
-// Lazy load the heavy WorldMapDemo component
+// Lazy load the heavy components
 const WorldMapDemo = dynamic(() => import("@/components/ui/world-map-demo"), {
   loading: () => (
     <div className="w-full h-96 bg-muted/20 rounded-lg flex items-center justify-center">
       <div className="text-foreground/80 font-medium">Loading map...</div>
+    </div>
+  ),
+});
+
+const IndiaMapComponent = dynamic(() => import("@/components/ui/india-map"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-96 bg-muted/20 rounded-lg flex items-center justify-center">
+      <div className="text-foreground/80 font-medium">Loading India map...</div>
     </div>
   ),
 });
@@ -41,6 +52,12 @@ export default function Home() {
               className="text-foreground/80 hover:text-foreground transition-colors font-medium"
             >
               Helper
+            </Link>
+            <Link
+              href="/gemini-demo"
+              className="text-foreground/80 hover:text-foreground transition-colors font-medium"
+            >
+              Gemini AI
             </Link>
             <Link
               href="/help"
@@ -160,6 +177,36 @@ export default function Home() {
               </div>
             </div>
           </footer>
+        </section>
+
+        {/* India Emergency Response Section */}
+        <section className="py-20 relative z-10">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              India Emergency Response Network
+            </h2>
+            <p className="text-lg text-foreground/80 max-w-2xl mx-auto">
+              Interactive map showing relief camps, safe zones, and emergency services across India. 
+              Get real-time information about disaster response resources in your area.
+            </p>
+          </div>
+          
+          <div className="max-w-6xl mx-auto">
+            <div className="bg-background/80 backdrop-blur-sm rounded-xl p-6 shadow-xl border">
+              <div className="h-96">
+                <IndiaMapComponent />
+              </div>
+            </div>
+            
+            <div className="mt-8 text-center">
+              <Link
+                href="/help"
+                className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors shadow-lg"
+              >
+                Explore Emergency Resources
+              </Link>
+            </div>
+          </div>
         </section>
 
         {/* Features Section */}

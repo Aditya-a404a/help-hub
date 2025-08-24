@@ -11,7 +11,6 @@
    height="695.70178"
    width="611.85999"
    mapsvg:geoViewBox="68.184010 37.084109 97.418146 6.753659"
-
 >
   <metadata
      id="metadata44">
@@ -21,27 +20,12 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title>Map of India</dc:title>
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
-  <title>Map of India</title>
-  <desc>Interactive map of India showing states and territories</desc>
   <defs
      id="defs42" />
-  <style>
-    path {
-      fill: rgba(0, 0, 0, 0.1);
-      stroke: #000000;
-      stroke-width: 1;
-      transition: all 0.3s ease;
-    }
-    path:hover {
-      fill: rgba(0, 0, 0, 0.2);
-      stroke: #374151;
-      stroke-width: 2;
-    }
-  </style>
   <path
      id="IN-AN"
      title="Andaman and Nicobar Islands"

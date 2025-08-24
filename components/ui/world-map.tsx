@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef } from "react";
-import { useTheme } from "next-themes";
 
 interface MapProps {
   dots?: Array<{
@@ -16,34 +15,75 @@ export default function WorldMap({
   lineColor = "#ff0000",
 }: MapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const { theme } = useTheme();
 
   // Reference props to satisfy lint while keeping API stable
   void dots?.length;
   void lineColor;
 
-  // Determine which SVG to load based on theme
-  const getMapSvg = () => {
-    if (theme === "dark") {
-      return "/india-map-dark.svg";
-    }
-    return "/india-map-light.svg";
-  };
-
   return (
     <div ref={containerRef} className="w-full h-full relative font-sans">
-      {/* Pre-loaded world map SVG */}
+      {/* India Map SVG */}
       <div
-        className="absolute inset-0 opacity-80"
+        className="absolute inset-0 opacity-90"
         style={{
-          backgroundImage: `url("${getMapSvg()}")`,
-          backgroundSize: "cover",
+          backgroundImage: `url("/india-map.svg")`,
+          backgroundSize: "contain",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
         }}
       />
 
       {/* Connection lines and dots */}
+      {dots.map((dot, index) => (
+        <div key={index} className="absolute inset-0">
+          {/* Start point */}
+          <div
+            className="absolute w-3 h-3 bg-blue-600 rounded-full border-2 border-white shadow-lg transform -translate-x-1/2 -translate-y-1/2"
+            style={{
+              left: `${((dot.start.lng + 180) / 360) * 100}%`,
+              top: `${((90 - dot.start.lat) / 180) * 100}%`,
+            }}
+          >
+            {dot.start.label && (
+              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                {dot.start.label}
+              </div>
+            )}
+          </div>
+
+          {/* End point */}
+          <div
+            className="absolute w-3 h-3 bg-red-600 rounded-full border-2 border-white shadow-lg transform -translate-x-1/2 -translate-y-1/2"
+            style={{
+              left: `${((dot.end.lng + 180) / 360) * 100}%`,
+              top: `${((90 - dot.end.lat) / 180) * 100}%`,
+            }}
+          >
+            {dot.end.label && (
+              <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-red-600 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                {dot.end.label}
+              </div>
+            )}
+          </div>
+
+          {/* Connection line */}
+          <svg
+            className="absolute inset-0 w-full h-full pointer-events-none"
+            style={{ zIndex: 1 }}
+          >
+            <line
+              x1={`${((dot.start.lng + 180) / 360) * 100}%`}
+              y1={`${((90 - dot.start.lat) / 180) * 100}%`}
+              x2={`${((dot.end.lng + 180) / 360) * 100}%`}
+              y2={`${((90 - dot.end.lat) / 180) * 100}%`}
+              stroke={lineColor}
+              strokeWidth="2"
+              strokeDasharray="5,5"
+              className="animate-pulse"
+            />
+          </svg>
+        </div>
+      ))}
 
       {/* CSS animations with hardware acceleration */}
       <style jsx>{`

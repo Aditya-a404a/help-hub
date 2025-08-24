@@ -3,6 +3,11 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { disasterAPI, RouteRequest } from "@/lib/disaster-api";
+import { useAuth } from "@/lib/hooks/useAuth";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { LogIn } from "lucide-react";
 
 // Fix for default markers in Leaflet
 delete (L.Icon.Default.prototype as { _getIconUrl?: string })._getIconUrl;
@@ -19,6 +24,13 @@ interface SafePoint {
   distance: number;
   capacity: number;
   features: string[];
+  type: 'amenity' | 'relief-center' | 'safe-zone';
+  amenity_type?: string;
+  resources?: {
+    beds?: number;
+    doctors?: number;
+    ambulances?: number;
+  };
 }
 
 interface DangerZone {
@@ -28,9 +40,12 @@ interface DangerZone {
   radius: number;
   type: string;
   severity: 'high' | 'medium' | 'low';
+  flood_probability?: number;
+  source: 'flood-prediction' | 'user-report' | 'sensor';
 }
 
   const EmergencyMap = () => {
+  const { isAuthenticated } = useAuth();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
@@ -39,6 +54,7 @@ interface DangerZone {
   const [selectedSafePoint, setSelectedSafePoint] = useState<SafePoint | null>(null);
   const [routePath, setRoutePath] = useState<L.LatLng[]>([]);
   const [isCalculatingRoute, setIsCalculatingRoute] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false);
 
   // Create a smooth path between two points
   const createSmoothPath = useCallback((start: [number, number], end: [number, number], segments: number) => {
@@ -78,49 +94,108 @@ interface DangerZone {
   }, [createSmoothPath]);
   
   // Function to calculate safe route avoiding danger zones
-  const calculateSafeRoute = useCallback((start: [number, number], end: [number, number]) => {
+  const calculateSafeRoute = useCallback(async (start: [number, number], end: [number, number]) => {
     console.log('calculateSafeRoute called with:', { start, end, dangerZones });
-    
+
     if (!start || !end) {
       console.log('No start or end coordinates');
       return [];
     }
-    
-    // Simple and fast route calculation
-    // const directDistance = Math.sqrt(
-    //   Math.pow(end[0] - start[0], 2) + Math.pow(end[1] - start[1], 2)
-    // );
-    
-    // Check if direct path intersects with any danger zones
-    let isDirectPathSafe = true;
-    for (const dangerZone of dangerZones) {
-      const distanceToDanger = Math.sqrt(
-        Math.pow(dangerZone.coordinates[0] - start[0], 2) + 
-        Math.pow(dangerZone.coordinates[1] - start[1], 2)
-      );
-      
-      // If danger zone is close to the path, consider it unsafe
-      if (distanceToDanger < (dangerZone.radius / 111000) * 2) {
-        isDirectPathSafe = false;
-        break;
+
+    // If user is not authenticated, use simple calculation
+    if (!isAuthenticated) {
+      console.log('User not authenticated, using simple route calculation');
+
+      // Check if direct path intersects with any danger zones
+      let isDirectPathSafe = true;
+      for (const dangerZone of dangerZones) {
+        const distanceToDanger = Math.sqrt(
+          Math.pow(dangerZone.coordinates[0] - start[0], 2) +
+          Math.pow(dangerZone.coordinates[1] - start[1], 2)
+        );
+
+        // If danger zone is close to the path, consider it unsafe
+        if (distanceToDanger < (dangerZone.radius / 111000) * 2) {
+          isDirectPathSafe = false;
+          break;
+        }
       }
+
+      if (isDirectPathSafe) {
+        return createSmoothPath(start, end, 5);
+      }
+
+      return createSafeDetour(start, end);
     }
-    
-    if (isDirectPathSafe) {
-      // Direct path is safe, return it with some smoothing
-      console.log('Direct path is safe');
+
+    try {
+      // Create GeoJSON for danger zones to avoid
+      const avoidGeoJson = {
+        type: "FeatureCollection",
+        features: dangerZones.map(dangerZone => ({
+          type: "Feature",
+          geometry: {
+            type: "Polygon",
+            coordinates: [[
+              [
+                dangerZone.coordinates[1] - 0.01,
+                dangerZone.coordinates[0] - 0.01
+              ],
+              [
+                dangerZone.coordinates[1] + 0.01,
+                dangerZone.coordinates[0] - 0.01
+              ],
+              [
+                dangerZone.coordinates[1] + 0.01,
+                dangerZone.coordinates[0] + 0.01
+              ],
+              [
+                dangerZone.coordinates[1] - 0.01,
+                dangerZone.coordinates[0] + 0.01
+              ],
+              [
+                dangerZone.coordinates[1] - 0.01,
+                dangerZone.coordinates[0] - 0.01
+              ]
+            ]]
+          }
+        }))
+      };
+
+      const routeRequest: RouteRequest = {
+        start_latitude: start[0],
+        start_longitude: start[1],
+        end_latitude: end[0],
+        end_longitude: end[1],
+        avoid_geojson: dangerZones.length > 0 ? avoidGeoJson : undefined,
+        profile: 'driving-car',
+        preference: 'fastest'
+      };
+
+      console.log('Requesting route from API:', routeRequest);
+      const response = await disasterAPI.findRoute(routeRequest);
+
+      if (response.success && response.route?.features?.[0]) {
+        // Extract coordinates from the route GeoJSON
+        const coordinates = response.route.features[0].geometry.coordinates;
+        console.log('Route received from API:', coordinates);
+        return coordinates.map(coord => [coord[1], coord[0]] as [number, number]);
+      } else {
+        console.log('API route failed, using fallback');
+        toast.error('Route calculation failed, using basic route');
+        return createSmoothPath(start, end, 5);
+      }
+    } catch (error) {
+      console.error('Error calculating route:', error);
+      toast.error('Route calculation failed, using basic route');
       return createSmoothPath(start, end, 5);
     }
-    
-    // Direct path is not safe, create a simple detour
-    console.log('Creating safe detour');
-    return createSafeDetour(start, end);
-  }, [dangerZones, createSafeDetour, createSmoothPath]);
+  }, [dangerZones, createSafeDetour, createSmoothPath, isAuthenticated]);
 
   // Function to handle safe point click
   const handleSafePointClick = useCallback(async (safePoint: SafePoint) => {
     console.log('handleSafePointClick called with:', safePoint);
-    
+
     if (selectedSafePoint?.id === safePoint.id) {
       // Deselect if clicking the same point
       console.log('Deselecting safe point');
@@ -128,27 +203,32 @@ interface DangerZone {
       setRoutePath([]);
       return;
     }
-    
+
     // Select new safe point
     console.log('Selecting new safe point:', safePoint.name);
     setSelectedSafePoint(safePoint);
-    
+
     if (!userLocation) {
       console.log('No user location available');
       return;
     }
-    
+
     // Calculate route asynchronously to prevent freezing
     setIsCalculatingRoute(true);
-    
+
     try {
       // Use setTimeout to make it non-blocking
-      setTimeout(() => {
-        console.log('Calculating route from', userLocation, 'to', safePoint.coordinates);
-        const route = calculateSafeRoute(userLocation, safePoint.coordinates);
-        console.log('Route calculated:', route);
-        setRoutePath(route.map(coord => L.latLng(coord[0], coord[1])));
-        setIsCalculatingRoute(false);
+      setTimeout(async () => {
+        try {
+          console.log('Calculating route from', userLocation, 'to', safePoint.coordinates);
+          const route = await calculateSafeRoute(userLocation, safePoint.coordinates);
+          console.log('Route calculated:', route);
+          setRoutePath(route.map(coord => L.latLng(coord[0], coord[1])));
+        } catch (error) {
+          console.error('Error calculating route:', error);
+        } finally {
+          setIsCalculatingRoute(false);
+        }
       }, 10);
     } catch (error) {
       console.error('Error calculating route:', error);
@@ -178,6 +258,89 @@ interface DangerZone {
     return { distance: distanceKm, time: timeMinutes };
   };
 
+  // Load real data from APIs
+  const loadEmergencyData = useCallback(async (latitude: number, longitude: number) => {
+    if (!isAuthenticated) {
+      console.log('User not authenticated, using demo data');
+      return;
+    }
+
+    setIsLoadingData(true);
+    try {
+      // Load amenities and relief centers
+      const [amenitiesResponse, reliefCentersResponse, floodAlertsResponse] = await Promise.all([
+        disasterAPI.getNearbyAmenities(latitude, longitude, 10, undefined).catch(() => null),
+        disasterAPI.getNearbyReliefCenters(latitude, longitude, 10, 10).catch(() => null),
+        disasterAPI.getFloodAlerts('high', 'Chennai', 10).catch(() => null)
+      ]);
+
+      const allSafePoints: SafePoint[] = [];
+
+      // Process amenities
+      if (amenitiesResponse?.success && amenitiesResponse.data) {
+        const amenityPoints: SafePoint[] = amenitiesResponse.data.map(amenity => ({
+          id: `amenity-${amenity._id}`,
+          name: amenity.name,
+          coordinates: [amenity.latitude, amenity.longitude] as [number, number],
+          distance: amenity.distance_km,
+          capacity: amenity.resources?.beds || 50,
+          features: [
+            `Type: ${amenity.amenity_type}`,
+            amenity.resources?.beds ? `${amenity.resources.beds} beds` : '',
+            amenity.resources?.doctors ? `${amenity.resources.doctors} doctors` : '',
+            amenity.resources?.ambulances ? `${amenity.resources.ambulances} ambulances` : ''
+          ].filter(Boolean),
+          type: 'amenity',
+          amenity_type: amenity.amenity_type,
+          resources: amenity.resources
+        }));
+        allSafePoints.push(...amenityPoints);
+      }
+
+      // Process relief centers
+      if (reliefCentersResponse?.success && reliefCentersResponse.data) {
+        const reliefPoints: SafePoint[] = reliefCentersResponse.data.map(center => ({
+          id: `relief-${center.id}`,
+          name: center.name,
+          coordinates: [center.latitude, center.longitude] as [number, number],
+          distance: center.distance_km,
+          capacity: center.capacity,
+          features: [
+            `Capacity: ${center.capacity} people`,
+            `Occupancy: ${center.current_occupancy}`,
+            center.contact ? `Contact: ${center.contact}` : '',
+            center.is_active ? 'Active' : 'Inactive'
+          ].filter(Boolean),
+          type: 'relief-center'
+        }));
+        allSafePoints.push(...reliefPoints);
+      }
+
+      setSafePoints(allSafePoints);
+
+      // Process flood alerts as danger zones
+      if (floodAlertsResponse?.success && floodAlertsResponse.alerts) {
+        const floodDangerZones: DangerZone[] = floodAlertsResponse.alerts.map(alert => ({
+          id: `flood-${alert.id}`,
+          name: `Flood Risk Area - ${alert.flood_probability * 100}%`,
+          coordinates: [alert.latitude, alert.longitude] as [number, number],
+          radius: Math.max(500, alert.affected_area_km2 * 100), // Convert km2 to meters
+          type: 'Flood',
+          severity: alert.severity_level as 'high' | 'medium' | 'low',
+          flood_probability: alert.flood_probability,
+          source: 'flood-prediction'
+        }));
+        setDangerZones(floodDangerZones);
+      }
+
+    } catch (error) {
+      console.error('Error loading emergency data:', error);
+      toast.error('Failed to load emergency data');
+    } finally {
+      setIsLoadingData(false);
+    }
+  }, [isAuthenticated]);
+
   useEffect(() => {
     // Get user location
     if (navigator.geolocation) {
@@ -185,163 +348,18 @@ interface DangerZone {
         (position) => {
           const { latitude, longitude } = position.coords;
           setUserLocation([latitude, longitude]);
-          
-          // Generate dummy safe points around user location
-          const dummySafePoints: SafePoint[] = [
-            {
-              id: '1',
-              name: 'Community Center',
-              coordinates: [latitude + 0.01, longitude - 0.01],
-              distance: 0.8,
-              capacity: 500,
-              features: ['Flood-proof', 'Earthquake-resistant', 'Emergency power', 'Water supply']
-            },
-            {
-              id: '2',
-              name: 'High School Gymnasium',
-              coordinates: [latitude + 0.015, longitude + 0.012],
-              distance: 1.2,
-              capacity: 800,
-              features: ['Storm shelter', 'Medical facilities', 'Food storage', 'Emergency lighting']
-            },
-            {
-              id: '3',
-              name: 'City Hall',
-              coordinates: [latitude - 0.008, longitude + 0.005],
-              distance: 1.5,
-              capacity: 200,
-              features: ['Communication hub', 'Emergency operations', 'Weather monitoring', 'Backup power']
-            },
-            {
-              id: '4',
-              name: 'Public Library',
-              coordinates: [latitude + 0.005, longitude + 0.003],
-              distance: 0.6,
-              capacity: 300,
-              features: ['Backup power', 'Water supply', 'Emergency lighting', 'Communication']
-            }
-          ];
-          setSafePoints(dummySafePoints);
-          
-          // Generate dummy danger zones around user location
-          const dummyDangerZones: DangerZone[] = [
-            {
-              id: 'd1',
-              name: 'Flooded Area',
-              coordinates: [latitude + 0.008, longitude - 0.005],
-              radius: 300,
-              type: 'Flood',
-              severity: 'high'
-            },
-            {
-              id: 'd2',
-              name: 'Fire Zone',
-              coordinates: [latitude + 0.012, longitude + 0.008],
-              radius: 200,
-              type: 'Fire',
-              severity: 'high'
-            },
-            {
-              id: 'd3',
-              name: 'Collapsed Building',
-              coordinates: [latitude - 0.003, longitude + 0.007],
-              radius: 150,
-              type: 'Structural',
-              severity: 'medium'
-            },
-            {
-              id: 'd4',
-              name: 'Gas Leak',
-              coordinates: [latitude + 0.006, longitude + 0.002],
-              radius: 250,
-              type: 'Chemical',
-              severity: 'high'
-            }
-          ];
-          setDangerZones(dummyDangerZones);
+          loadEmergencyData(latitude, longitude);
         },
         (error) => {
           console.error('Error getting location:', error);
-          // Default to a sample location for demo
-          const defaultLocation: [number, number] = [40.7128, -74.0060];
+          // Default to Chennai coordinates
+          const defaultLocation: [number, number] = [13.0827, 80.2707];
           setUserLocation(defaultLocation);
-          
-          const dummySafePoints: SafePoint[] = [
-            {
-              id: '1',
-              name: 'Community Center',
-              coordinates: [40.7228, -74.0160],
-              distance: 0.8,
-              capacity: 500,
-              features: ['Flood-proof', 'Earthquake-resistant', 'Emergency power', 'Water supply']
-            },
-            {
-              id: '2',
-              name: 'High School Gymnasium',
-              coordinates: [40.7278, -73.9960],
-              distance: 1.2,
-              capacity: 800,
-              features: ['Storm shelter', 'Medical facilities', 'Food storage', 'Emergency lighting']
-            },
-            {
-              id: '3',
-              name: 'City Hall',
-              coordinates: [40.7048, -74.0110],
-              distance: 1.5,
-              capacity: 200,
-              features: ['Communication hub', 'Emergency operations', 'Weather monitoring', 'Backup power']
-            },
-            {
-              id: '4',
-              name: 'Public Library',
-              coordinates: [40.7178, -74.0030],
-              distance: 0.6,
-              capacity: 300,
-              features: ['Backup power', 'Water supply', 'Emergency lighting', 'Communication']
-            }
-          ];
-          setSafePoints(dummySafePoints);
-          
-          // Generate dummy danger zones for default location
-          const dummyDangerZones: DangerZone[] = [
-            {
-              id: 'd1',
-              name: 'Flooded Area',
-              coordinates: [40.7208, -74.0110],
-              radius: 300,
-              type: 'Flood',
-              severity: 'high'
-            },
-            {
-              id: 'd2',
-              name: 'Fire Zone',
-              coordinates: [40.7248, -73.9980],
-              radius: 200,
-              type: 'Fire',
-              severity: 'high'
-            },
-            {
-              id: 'd3',
-              name: 'Collapsed Building',
-              coordinates: [40.7098, -74.0130],
-              radius: 150,
-              type: 'Structural',
-              severity: 'medium'
-            },
-            {
-              id: 'd4',
-              name: 'Gas Leak',
-              coordinates: [40.7188, -74.0040],
-              radius: 250,
-              type: 'Chemical',
-              severity: 'high'
-            }
-          ];
-          setDangerZones(dummyDangerZones);
+          loadEmergencyData(defaultLocation[0], defaultLocation[1]);
         }
       );
     }
-  }, []);
+  }, [loadEmergencyData]);
 
   useEffect(() => {
     if (!mapRef.current || !userLocation) return;
@@ -420,15 +438,18 @@ interface DangerZone {
 
     // Add safe point markers
     safePoints.forEach((point) => {
+      const isReliefCenter = point.type === 'relief-center';
+      const markerColor = isReliefCenter ? '#059669' : '#16a34a'; // emerald for relief centers, green for amenities
+
       const safeIcon = L.divIcon({
         className: 'custom-safe-marker',
         html: `
           <div style="
-            width: 20px; 
-            height: 20px; 
-            background: #16a34a; 
-            border: 3px solid white; 
-            border-radius: 50%; 
+            width: 20px;
+            height: 20px;
+            background: ${markerColor};
+            border: 3px solid white;
+            border-radius: 50%;
             box-shadow: 0 2px 6px rgba(0,0,0,0.3);
             display: flex;
             align-items: center;
@@ -436,7 +457,10 @@ interface DangerZone {
             cursor: pointer;
           ">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="white">
-              <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+              ${isReliefCenter
+                ? '<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>'
+                : '<path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>'
+              }
             </svg>
           </div>
         `,
@@ -447,23 +471,9 @@ interface DangerZone {
       const marker = L.marker(point.coordinates, { icon: safeIcon }).addTo(map);
       
       // Make marker clickable for route calculation
-      marker.on('click', () => {
+      marker.on('click', async () => {
         console.log('Safe point clicked:', point.name);
-        // Call the function directly to avoid dependency issues
-        if (selectedSafePoint?.id === point.id) {
-          setSelectedSafePoint(null);
-          setRoutePath([]);
-        } else {
-          setSelectedSafePoint(point);
-          if (userLocation) {
-            setIsCalculatingRoute(true);
-            setTimeout(() => {
-              const route = calculateSafeRoute(userLocation, point.coordinates);
-              setRoutePath(route.map(coord => L.latLng(coord[0], coord[1])));
-              setIsCalculatingRoute(false);
-            }, 10);
-          }
-        }
+        await handleSafePointClick(point);
       });
       
       marker.bindPopup(`
@@ -562,6 +572,39 @@ interface DangerZone {
 
   return (
     <div className="h-96 rounded-lg overflow-hidden border relative">
+      {/* Loading overlay */}
+      {isLoadingData && (
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+            <p className="text-sm text-muted-foreground">Loading emergency data...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Authentication required message */}
+      {!isAuthenticated && (
+        <div className="absolute top-4 left-4 bg-orange-100 dark:bg-orange-900/20 p-3 rounded-lg border border-orange-200 dark:border-orange-800 z-40 max-w-64">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 bg-orange-500 rounded-full"></div>
+            <p className="text-xs font-medium text-orange-800 dark:text-orange-200">
+              Sign in to access real-time emergency data
+            </p>
+          </div>
+          <Button
+            size="sm"
+            className="mt-2 w-full text-xs"
+            onClick={() => {
+              // Dispatch custom event to open auth modal
+              document.dispatchEvent(new CustomEvent('openAuthModal'));
+            }}
+          >
+            <LogIn className="w-3 h-3 mr-1" />
+            Sign In
+          </Button>
+        </div>
+      )}
+
       <div ref={mapRef} className="w-full h-full" />
       
       {/* Map Legend */}
@@ -573,8 +616,12 @@ interface DangerZone {
             <span className="text-muted-foreground">Your Location</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-600 rounded-full"></div>
-            <span className="text-muted-foreground">Safe Point</span>
+            <div className="w-3 h-3 bg-green-600 rounded-full border-2 border-white"></div>
+            <span className="text-muted-foreground">Hospitals & Clinics</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-emerald-600 rounded-full border-2 border-white"></div>
+            <span className="text-muted-foreground">Relief Centers</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-red-600 rounded-full"></div>

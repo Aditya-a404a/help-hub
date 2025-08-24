@@ -66,3 +66,15 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  /* Smooth tab content transitions */
+  .tabs-content {
+    @apply transition-all duration-200 ease-in-out;
+  }
+  
+  /* Active tab indicator animation */
+  .tabs-active-indicator {
+    @apply transition-all duration-200 ease-in-out;
+  }
+}
