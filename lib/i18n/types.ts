@@ -8,6 +8,9 @@ export interface Translation {
   signIn: string;
   signOut: string;
   profile: string;
+  helper: string;
+  geminiAI: string;
+  needHelp: string;
   
   // Common actions
   search: string;
@@ -17,6 +20,8 @@ export interface Translation {
   cancel: string;
   submit: string;
   close: string;
+  send: string;
+  clear: string;
   
   // Dashboard
   overview: string;
@@ -47,6 +52,21 @@ export interface Translation {
   evacuation: string;
   safeZone: string;
   dangerZone: string;
+  disasterResponse: string;
+  rescueStrategy: string;
+  
+  // Home page
+  welcomeTitle: string;
+  welcomeSubtitle: string;
+  emergencyResourcesLink: string;
+  loadingMap: string;
+  
+  // Gemini Chat
+  chatTitle: string;
+  typeMessage: string;
+  chatPlaceholder: string;
+  sendingMessage: string;
+  rescueChat: string;
   
   // Time
   lastUpdated: string;
@@ -65,4 +85,13 @@ export interface Translation {
   loginRequired: string;
   pleaseSignIn: string;
   authenticationFailed: string;
+  
+  // MCP Agent Tools
+  geoJsonTool: string;
+  messagingTool: string;
+  ndrfAgents: string;
+  volunteers: string;
+  sendingToAgents: string;
+  locationData: string;
+  mapVisualization: string;
 }

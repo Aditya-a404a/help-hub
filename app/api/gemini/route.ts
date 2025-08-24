@@ -3,7 +3,7 @@ import { geminiService } from '@/lib/gemini';
 
 export async function POST(request: NextRequest) {
   try {
-    const { prompt, options } = await request.json();
+    const { prompt, options, mcpContext, useRescueStrategy } = await request.json();
 
     if (!prompt) {
       return NextResponse.json(
@@ -14,10 +14,18 @@ export async function POST(request: NextRequest) {
 
     let response: string;
 
-    if (options) {
-      response = await geminiService.generateContentWithOptions(prompt, options);
+    if (useRescueStrategy && mcpContext) {
+      // Use the specialized rescue strategy generation with MCP tools
+      response = await geminiService.generateRescueStrategy(
+        mcpContext.incident,
+        mcpContext.teams,
+        mcpContext.resources,
+        mcpContext.communications
+      );
+    } else if (options) {
+      response = await geminiService.generateContentWithOptions(prompt, options, mcpContext);
     } else {
-      response = await geminiService.generateContent(prompt);
+      response = await geminiService.generateContent(prompt, mcpContext);
     }
 
     return NextResponse.json({ response });

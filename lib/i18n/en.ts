@@ -7,6 +7,9 @@ export const en: Translation = {
   signIn: 'Sign In',
   signOut: 'Sign Out',
   profile: 'Profile',
+  helper: 'Helper',
+  geminiAI: 'Gemini AI',
+  needHelp: 'Need Help',
   
   // Common actions
   search: 'Search',
@@ -16,6 +19,8 @@ export const en: Translation = {
   cancel: 'Cancel',
   submit: 'Submit',
   close: 'Close',
+  send: 'Send',
+  clear: 'Clear',
   
   // Dashboard
   overview: 'Overview',
@@ -46,6 +51,21 @@ export const en: Translation = {
   evacuation: 'Evacuation',
   safeZone: 'Safe Zone',
   dangerZone: 'Danger Zone',
+  disasterResponse: 'Disaster Response',
+  rescueStrategy: 'Rescue Strategy',
+  
+  // Home page
+  welcomeTitle: 'Disaster Response',
+  welcomeSubtitle: 'Your trusted partner in emergency management and disaster response',
+  emergencyResourcesLink: 'Explore Emergency Resources',
+  loadingMap: 'Loading map...',
+  
+  // Gemini Chat
+  chatTitle: 'AI Rescue Assistant',
+  typeMessage: 'Type your message...',
+  chatPlaceholder: 'Ask about emergency response strategies...',
+  sendingMessage: 'Sending...',
+  rescueChat: 'Rescue Chat',
   
   // Time
   lastUpdated: 'Last Updated',
@@ -64,4 +84,13 @@ export const en: Translation = {
   loginRequired: 'Login Required',
   pleaseSignIn: 'Please sign in to view this data',
   authenticationFailed: 'Authentication failed',
+  
+  // MCP Agent Tools
+  geoJsonTool: 'GeoJSON Mapping Tool',
+  messagingTool: 'Agent Messaging System',
+  ndrfAgents: 'NDRF Agents',
+  volunteers: 'Volunteers',
+  sendingToAgents: 'Sending to agents...',
+  locationData: 'Location Data',
+  mapVisualization: 'Map Visualization',
 };
