@@ -8,7 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/hooks/useAuth";
+import { disasterAPI } from "@/lib/disaster-api";
+import { useTranslation } from "@/lib/i18n";
 import AuthModal from "@/components/auth-modal";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import WeatherWidget from "@/components/ui/weather-widget";
 import { 
   MapPin, 
@@ -114,6 +117,7 @@ interface CommunicationChannel {
 
 export default function DDMADashboardPage() {
   const { user, isAuthenticated, logout } = useAuth();
+  const t = useTranslation();
   const [selectedTab, setSelectedTab] = useState('overview');
   const [disasterAlerts, setDisasterAlerts] = useState<DisasterAlert[]>([]);
   const [responseTeams, setResponseTeams] = useState<ResponseTeam[]>([]);
@@ -143,7 +147,7 @@ export default function DDMADashboardPage() {
 
   useEffect(() => {
     loadDDMAData();
-  }, []);
+  }, [isAuthenticated]);
 
   // Listen for auth modal events
   useEffect(() => {
@@ -155,114 +159,107 @@ export default function DDMADashboardPage() {
     };
   }, []);
 
-  const loadDDMAData = () => {
-    // Simulate loading DDMA data
-    const mockDisasterAlerts: DisasterAlert[] = [
-      {
-        id: '1',
-        type: 'flood',
-        severity: 'critical',
-        location: 'Adyar, Chennai',
-        coordinates: [13.0067, 80.2546],
-        description: 'Heavy rainfall causing flooding in low-lying areas. Water level rising rapidly.',
-        timestamp: '2 hours ago',
-        status: 'active',
-        affectedPopulation: 15000,
-        responseLevel: 'red'
-      },
-      {
-        id: '2',
-        type: 'fire',
-        severity: 'medium',
-        location: 'T Nagar Market Area',
-        coordinates: [13.0368, 80.2404],
-        description: 'Electrical fire in commercial building. Fire brigade deployed.',
-        timestamp: '45 minutes ago',
-        status: 'active',
-        affectedPopulation: 500,
-        responseLevel: 'yellow'
-      }
-    ];
+  const loadDDMAData = async () => {
+    if (!isAuthenticated) {
+      // If not authenticated, set empty arrays and show sign-in prompt
+      setDisasterAlerts([]);
+      setResponseTeams([]);
+      setResourceInventory([]);
+      setCommunicationChannels([]);
+      setIsLoading(false);
+      return;
+    }
 
-    const mockResponseTeams: ResponseTeam[] = [
-      {
-        id: '1',
-        name: 'Chennai Fire Brigade - Station 1',
-        type: 'fire',
-        location: 'T Nagar, Chennai',
-        coordinates: [13.0368, 80.2404],
-        status: 'deployed',
-        personnel: 12,
-        vehicles: 3,
-        specializations: ['Fire suppression', 'Rescue operations', 'Hazardous materials'],
-        contact: '+91-44-2345-6789',
-        lastUpdate: '15 minutes ago'
-      },
-      {
-        id: '2',
-        name: 'NDRF Team Alpha',
-        type: 'rescue',
-        location: 'Adyar, Chennai',
-        coordinates: [13.0067, 80.2546],
-        status: 'deployed',
-        personnel: 25,
-        vehicles: 5,
-        specializations: ['Water rescue', 'Urban search', 'Medical support'],
-        contact: '+91-11-2343-8000',
-        lastUpdate: '30 minutes ago'
-      }
-    ];
+    try {
+      setIsLoading(true);
 
-    const mockResourceInventory: ResourceInventory[] = [
-      {
-        id: '1',
-        category: 'medical',
-        item: 'First Aid Kits',
-        quantity: 500,
-        unit: 'kits',
-        location: 'Central Warehouse, Anna Nagar',
-        status: 'available',
-        priority: 'high'
-      },
-      {
-        id: '2',
-        category: 'food',
-        item: 'Ready-to-Eat Meals',
-        quantity: 2000,
-        unit: 'packets',
-        location: 'Food Storage, Mylapore',
-        expiryDate: '2024-12-31',
-        status: 'available',
-        priority: 'medium'
+      // Load real disaster alerts (flood alerts)
+      const alertsResponse = await disasterAPI.getFloodAlerts('high', 'Chennai', 10);
+      if (alertsResponse.success) {
+        const transformedAlerts: DisasterAlert[] = alertsResponse.alerts.map(alert => ({
+          id: alert.id,
+          type: 'flood',
+          severity: alert.severity_level as 'low' | 'medium' | 'high' | 'critical',
+          location: alert.district,
+          coordinates: [alert.latitude, alert.longitude] as [number, number],
+          description: `Flood alert for ${alert.district}. Probability: ${alert.flood_probability}%`,
+          timestamp: new Date(alert.created_at).toLocaleString(),
+          status: 'active',
+          affectedPopulation: Math.round(alert.affected_area_km2 * 1000), // Estimate population from area
+          responseLevel: alert.severity_level === 'high' ? 'red' : alert.severity_level === 'medium' ? 'yellow' : 'green'
+        }));
+        setDisasterAlerts(transformedAlerts);
       }
-    ];
 
-    const mockCommunicationChannels: CommunicationChannel[] = [
-      {
-        id: '1',
-        type: 'emergency_broadcast',
-        status: 'active',
-        coverage: 'Chennai Metropolitan Region',
-        uptime: 99.8,
-        lastTest: '2 hours ago',
-        backup: true
-      },
-      {
-        id: '2',
-        type: 'radio',
-        status: 'active',
-        coverage: 'Greater Chennai',
-        uptime: 98.5,
-        lastTest: '4 hours ago',
-        backup: false
+      // Load relief centers as response teams
+      const reliefResponse = await disasterAPI.getReliefCenters('Chennai', true);
+      if (reliefResponse.success) {
+        const transformedTeams: ResponseTeam[] = reliefResponse.data.map(center => ({
+          id: center.id,
+          name: center.name,
+          type: 'rescue',
+          location: center.address,
+          coordinates: [center.latitude, center.longitude] as [number, number],
+          status: center.is_active ? 'available' : 'maintenance',
+          personnel: center.current_occupancy,
+          vehicles: 0, // Not available in API
+          specializations: ['Emergency shelter', 'Food distribution', 'Medical aid'],
+          contact: center.phone || 'Contact via DDMA',
+          lastUpdate: new Date(center.updated_at || center.created_at).toLocaleString()
+        }));
+        setResponseTeams(transformedTeams);
       }
-    ];
 
-    setDisasterAlerts(mockDisasterAlerts);
-    setResponseTeams(mockResponseTeams);
-    setResourceInventory(mockResourceInventory);
-    setCommunicationChannels(mockCommunicationChannels);
-    setIsLoading(false);
+      // Load amenities as resource inventory
+      const amenitiesResponse = await disasterAPI.getAmenities('hospital', 'active', 10);
+      if (amenitiesResponse.success) {
+        const transformedResources: ResourceInventory[] = amenitiesResponse.data.map(amenity => ({
+          id: amenity._id,
+          category: 'medical',
+          item: amenity.amenity_type,
+          quantity: amenity.resources?.beds || 0,
+          unit: 'beds',
+          location: amenity.name,
+          status: 'available',
+          priority: 'medium'
+        }));
+        setResourceInventory(transformedResources);
+      }
+
+      // Set mock communication channels for now (no API available)
+      const mockCommunicationChannels: CommunicationChannel[] = [
+        {
+          id: '1',
+          type: 'emergency_broadcast',
+          status: 'active',
+          coverage: 'Chennai Metropolitan Region',
+          uptime: 99.8,
+          lastTest: '2 hours ago',
+          backup: true
+        },
+        {
+          id: '2',
+          type: 'radio',
+          status: 'active',
+          coverage: 'Greater Chennai',
+          uptime: 98.5,
+          lastTest: '4 hours ago',
+          backup: false
+        }
+      ];
+      setCommunicationChannels(mockCommunicationChannels);
+
+    } catch (error) {
+      console.error('Error loading DDMA data:', error);
+      
+      // Fall back to empty arrays on error
+      setDisasterAlerts([]);
+      setResponseTeams([]);
+      setResourceInventory([]);
+      setCommunicationChannels([]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getSeverityColor = (severity: string) => {
@@ -387,24 +384,6 @@ export default function DDMADashboardPage() {
     setIsSearching(false);
   };
 
-  // Handle red banner click to open Gemini chat
-  const handleRedBannerClick = (incident: DisasterAlert) => {
-    setSelectedIncident(incident);
-    setIsGeminiModalOpen(true);
-  };
-
-  // Handle emergency call action
-  const handleEmergencyCall = (incident: DisasterAlert) => {
-    // In a real implementation, this would initiate a call
-    alert(`Emergency call initiated for ${incident.type} at ${incident.location}`);
-  };
-
-  // Handle view location action
-  const handleViewLocation = (incident: DisasterAlert) => {
-    // In a real implementation, this would open a map view
-    alert(`Opening location map for ${incident.location}`);
-  };
-
   // Close Gemini modal
   const closeGeminiModal = () => {
     setIsGeminiModalOpen(false);
@@ -481,7 +460,7 @@ export default function DDMADashboardPage() {
       <div className="h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-xl text-muted-foreground">Loading DDMA Dashboard...</p>
+          <p className="text-xl text-muted-foreground">{t.loading}</p>
         </div>
       </div>
     );
@@ -508,7 +487,7 @@ export default function DDMADashboardPage() {
                 className="text-xs h-6"
                 onClick={logout}
               >
-                Logout
+                {t.signOut}
               </Button>
             </div>
           ) : (
@@ -518,9 +497,10 @@ export default function DDMADashboardPage() {
               className="text-xs h-6"
               onClick={() => setIsAuthModalOpen(true)}
             >
-              Sign In
+              {t.signIn}
             </Button>
           )}
+          <LanguageSwitcher />
           <ThemeSwitcher />
         </div>
       </div>
@@ -597,7 +577,7 @@ export default function DDMADashboardPage() {
                   className="justify-start text-left h-12 data-[state=active]:bg-background data-[state=active]:border-l-4 data-[state=active]:border-primary data-[state=active]:pl-3 data-[state=active]:shadow-sm transition-all duration-200"
                 >
                   <Activity className="w-4 h-4 mr-2" />
-                  Overview
+                  {t.overview}
                   {isSearching && searchResults.alerts.length > 0 && (
                     <Badge variant="secondary" className="ml-auto text-xs">
                       {searchResults.alerts.length}
@@ -609,7 +589,7 @@ export default function DDMADashboardPage() {
                   className="justify-start text-left h-12 data-[state=active]:bg-background data-[state=active]:border-l-4 data-[state=active]:border-primary data-[state=active]:pl-3 data-[state=active]:shadow-sm transition-all duration-200"
                 >
                   <AlertTriangle className="w-4 h-4 mr-2" />
-                  Alerts
+                  {t.alerts}
                   {isSearching && searchResults.alerts.length > 0 && (
                     <Badge variant="destructive" className="ml-auto text-xs">
                       {searchResults.alerts.length}
@@ -621,7 +601,7 @@ export default function DDMADashboardPage() {
                   className="justify-start text-left h-12 data-[state=active]:bg-background data-[state=active]:border-l-4 data-[state=active]:border-primary data-[state=active]:pl-3 data-[state=active]:shadow-sm transition-all duration-200"
                 >
                   <Users className="w-4 h-4 mr-2" />
-                  Response Teams
+                  {t.responseTeams}
                   {isSearching && searchResults.teams.length > 0 && (
                     <Badge variant="secondary" className="ml-auto text-xs">
                       {searchResults.teams.length}
@@ -633,7 +613,7 @@ export default function DDMADashboardPage() {
                   className="justify-start text-left h-12 data-[state=active]:bg-background data-[state=active]:border-l-4 data-[state=active]:border-primary data-[state=active]:pl-3 data-[state=active]:shadow-sm transition-all duration-200"
                 >
                   <Database className="w-4 h-4 mr-2" />
-                  Resources
+                  {t.resources}
                   {isSearching && searchResults.resources.length > 0 && (
                     <Badge variant="outline" className="ml-auto text-xs">
                       {searchResults.resources.length}
@@ -645,7 +625,7 @@ export default function DDMADashboardPage() {
                   className="justify-start text-left h-12 data-[state=active]:bg-background data-[state=active]:border-l-4 data-[state=active]:border-primary data-[state=active]:pl-3 data-[state=active]:shadow-sm transition-all duration-200"
                 >
                   <Radio className="w-4 h-4 mr-2" />
-                  Communications
+                  {t.communications}
                   {isSearching && searchResults.communications.length > 0 && (
                     <Badge variant="default" className="ml-auto text-xs">
                       {searchResults.communications.length}

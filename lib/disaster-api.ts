@@ -62,7 +62,7 @@ export interface Amenity {
     beds?: number;
     doctors?: number;
     ambulances?: number;
-    [key: string]: any;
+    [key: string]: number | undefined;
   };
   last_updated: string;
 }
@@ -79,7 +79,7 @@ export interface NearbyAmenitiesResponse {
     resources?: {
       beds?: number;
       doctors?: number;
-      [key: string]: any;
+      [key: string]: number | undefined;
     };
   }>;
   total: number;
@@ -142,7 +142,7 @@ export interface RouteRequest {
   end_longitude: number;
   avoid_geojson?: {
     type: string;
-    features: any[];
+    features: Record<string, unknown>[];
   };
   profile?: string;
   preference?: string;
@@ -370,7 +370,7 @@ class DisasterAPIClient {
     });
   }
 
-  async getRouteAlternatives(data: RouteRequest & { alternatives: number }): Promise<{ success: boolean; alternatives: Array<{ route: any; distance_km: number; duration_minutes: number }> }> {
+  async getRouteAlternatives(data: RouteRequest & { alternatives: number }): Promise<{ success: boolean; alternatives: Array<{ route: Record<string, unknown>; distance_km: number; duration_minutes: number }> }> {
     return this.request('/route-finder/alternatives', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -457,7 +457,7 @@ class DisasterAPIClient {
     return this.request<ReliefCentersResponse>(`/relief-centers?${params}`);
   }
 
-  async createReliefCenter(data: Omit<ReliefCenter, 'id' | 'created_at' | 'updated_at'>): Promise<{ success: boolean; id: string; [key: string]: any }> {
+  async createReliefCenter(data: Omit<ReliefCenter, 'id' | 'created_at' | 'updated_at'>): Promise<{ success: boolean; id: string; [key: string]: unknown }> {
     return this.request('/relief-centers', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -506,7 +506,7 @@ export class APIError extends Error {
   constructor(
     message: string,
     public statusCode?: number,
-    public details?: any
+    public details?: unknown
   ) {
     super(message);
     this.name = 'APIError';
