@@ -66,6 +66,31 @@ const GeminiChatComponent = dynamic(() => import("@/components/gemini-chat"), {
   ),
 });
 
+// Dynamically import the new monitoring components
+const SocialMediaMonitor = dynamic(() => import("@/components/social-media-monitor"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-full bg-muted/20 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+        <p className="text-xs text-muted-foreground">Loading Social Media Monitor...</p>
+      </div>
+    </div>
+  ),
+});
+
+const IVRMonitor = dynamic(() => import("@/components/ivr-monitor"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-full bg-muted/20 rounded-lg border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+        <p className="text-xs text-muted-foreground">Loading IVR Monitor...</p>
+      </div>
+    </div>
+  ),
+});
+
 interface DisasterAlert {
   id: string;
   type: 'flood' | 'earthquake' | 'cyclone' | 'fire' | 'landslide' | 'drought';
@@ -339,7 +364,9 @@ export default function DDMADashboardPage() {
       'Utility Vehicles': ['utility', 'vehicles', 'vehicles status'],
       'Authority Control': ['authority', 'control'],
       'Emergency Response Status': ['emergency', 'response', 'status'],
-      'Weather Information': ['weather', 'information']
+      'Weather Information': ['weather', 'information'],
+      'Social Media Monitor': ['social', 'media', 'monitor', 'posts', 'sos'],
+      'IVR Monitor': ['ivr', 'calls', 'phone', 'monitor']
     };
 
     // Check if query matches any specific widget
@@ -435,7 +462,9 @@ export default function DDMADashboardPage() {
       'Utility Vehicles': ['utility', 'vehicles', 'vehicles status'],
       'Authority Control': ['authority', 'control'],
       'Emergency Response Status': ['emergency', 'response', 'status'],
-      'Weather Information': ['weather', 'information']
+      'Weather Information': ['weather', 'information'],
+      'Social Media Monitor': ['social', 'media', 'monitor', 'posts', 'sos'],
+      'IVR Monitor': ['ivr', 'calls', 'phone', 'monitor']
     };
     
     const searchTerms = widgetSearchMap[widgetTitle as keyof typeof widgetSearchMap];
@@ -710,7 +739,7 @@ export default function DDMADashboardPage() {
               <TabsContent value="overview" className="h-full m-0">
                 {/* Red Alert Bar - Most Recent Incident With Action Buttons */}
                 {/* Overview Tab */}
-                <div className="h-full grid grid-cols-2 gap-4">
+                <div className="h-full grid grid-cols-3 gap-4">
                   {/* Map Section */}
                   {shouldShowWidget('Chennai Emergency Response Map') && (
                     <Card className={`h-full transition-all duration-200 ${
@@ -735,7 +764,7 @@ export default function DDMADashboardPage() {
                     </Card>
                   )}
 
-                  {/* Alerts & Activity - Scrollable */}
+                  {/* Middle Column - Alerts & Activity */}
                   <div className="h-full overflow-y-auto space-y-4 pr-2">
                     {/* Danger Areas Overview */}
                     {shouldShowWidget('Active Danger Areas') && (
@@ -923,8 +952,29 @@ export default function DDMADashboardPage() {
                         </CardContent>
                       </Card>
                     )}
+                  </div>
 
-                    {/* Additional Emergency Info */}
+                  {/* Right Column - Monitoring & Communication */}
+                  <div className="h-full overflow-y-auto space-y-4 pr-2">
+                    {/* Social Media Monitor */}
+                    {shouldShowWidget('Social Media Monitor') && (
+                      <SocialMediaMonitor className={`transition-all duration-200 ${
+                        shouldHighlightWidget('Social Media Monitor') 
+                          ? 'border-2 border-primary shadow-lg bg-primary/5' 
+                          : ''
+                      }`} />
+                    )}
+
+                    {/* IVR Monitor */}
+                    {shouldShowWidget('IVR Monitor') && (
+                      <IVRMonitor className={`transition-all duration-200 ${
+                        shouldHighlightWidget('IVR Monitor') 
+                          ? 'border-2 border-primary shadow-lg bg-primary/5' 
+                          : ''
+                      }`} />
+                    )}
+
+                    {/* Emergency Response Status */}
                     {shouldShowWidget('Emergency Response Status') && (
                       <Card className={`transition-all duration-200 ${
                         shouldHighlightWidget('Emergency Response Status') 
@@ -989,17 +1039,16 @@ export default function DDMADashboardPage() {
                       </Card>
                     )}
 
-                    {/* No Widgets Match Message */}
-                    {isSearching && searchQuery.trim() && !shouldShowWidget('Chennai Emergency Response Map') && 
-                     !shouldShowWidget('Active Danger Areas') && !shouldShowWidget('Utility Vehicles') && 
-                     !shouldShowWidget('Authority Control') && !shouldShowWidget('Emergency Response Status') && 
+                    {/* No Widgets Match Message for right column */}
+                    {isSearching && searchQuery.trim() && !shouldShowWidget('Social Media Monitor') && 
+                     !shouldShowWidget('IVR Monitor') && !shouldShowWidget('Emergency Response Status') && 
                      !shouldShowWidget('Weather Information') && (
                       <Card className="border-dashed border-2 border-muted-foreground/30">
                         <CardContent className="pt-6 pb-6">
                           <div className="text-center text-muted-foreground">
                             <Search className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                            <p className="text-lg font-medium">No widgets match your search</p>
-                            <p className="text-sm">Try searching for: map, danger, vehicles, control, response, weather, or emergency</p>
+                            <p className="text-lg font-medium">No monitoring widgets match your search</p>
+                            <p className="text-sm">Try searching for: social, ivr, response, or weather</p>
                           </div>
                         </CardContent>
                       </Card>
