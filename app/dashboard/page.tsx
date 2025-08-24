@@ -9,7 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { disasterAPI } from "@/lib/disaster-api";
+import { useTranslation } from "@/lib/i18n";
 import AuthModal from "@/components/auth-modal";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import WeatherWidget from "@/components/ui/weather-widget";
 import { 
   MapPin, 
@@ -115,6 +117,7 @@ interface CommunicationChannel {
 
 export default function DDMADashboardPage() {
   const { user, isAuthenticated, logout } = useAuth();
+  const t = useTranslation();
   const [selectedTab, setSelectedTab] = useState('overview');
   const [disasterAlerts, setDisasterAlerts] = useState<DisasterAlert[]>([]);
   const [responseTeams, setResponseTeams] = useState<ResponseTeam[]>([]);
@@ -457,7 +460,7 @@ export default function DDMADashboardPage() {
       <div className="h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-xl text-muted-foreground">Loading DDMA Dashboard...</p>
+          <p className="text-xl text-muted-foreground">{t.loading}</p>
         </div>
       </div>
     );
@@ -484,7 +487,7 @@ export default function DDMADashboardPage() {
                 className="text-xs h-6"
                 onClick={logout}
               >
-                Logout
+                {t.signOut}
               </Button>
             </div>
           ) : (
@@ -494,9 +497,10 @@ export default function DDMADashboardPage() {
               className="text-xs h-6"
               onClick={() => setIsAuthModalOpen(true)}
             >
-              Sign In
+              {t.signIn}
             </Button>
           )}
+          <LanguageSwitcher />
           <ThemeSwitcher />
         </div>
       </div>
@@ -573,7 +577,7 @@ export default function DDMADashboardPage() {
                   className="justify-start text-left h-12 data-[state=active]:bg-background data-[state=active]:border-l-4 data-[state=active]:border-primary data-[state=active]:pl-3 data-[state=active]:shadow-sm transition-all duration-200"
                 >
                   <Activity className="w-4 h-4 mr-2" />
-                  Overview
+                  {t.overview}
                   {isSearching && searchResults.alerts.length > 0 && (
                     <Badge variant="secondary" className="ml-auto text-xs">
                       {searchResults.alerts.length}
@@ -585,7 +589,7 @@ export default function DDMADashboardPage() {
                   className="justify-start text-left h-12 data-[state=active]:bg-background data-[state=active]:border-l-4 data-[state=active]:border-primary data-[state=active]:pl-3 data-[state=active]:shadow-sm transition-all duration-200"
                 >
                   <AlertTriangle className="w-4 h-4 mr-2" />
-                  Alerts
+                  {t.alerts}
                   {isSearching && searchResults.alerts.length > 0 && (
                     <Badge variant="destructive" className="ml-auto text-xs">
                       {searchResults.alerts.length}
@@ -597,7 +601,7 @@ export default function DDMADashboardPage() {
                   className="justify-start text-left h-12 data-[state=active]:bg-background data-[state=active]:border-l-4 data-[state=active]:border-primary data-[state=active]:pl-3 data-[state=active]:shadow-sm transition-all duration-200"
                 >
                   <Users className="w-4 h-4 mr-2" />
-                  Response Teams
+                  {t.responseTeams}
                   {isSearching && searchResults.teams.length > 0 && (
                     <Badge variant="secondary" className="ml-auto text-xs">
                       {searchResults.teams.length}
@@ -609,7 +613,7 @@ export default function DDMADashboardPage() {
                   className="justify-start text-left h-12 data-[state=active]:bg-background data-[state=active]:border-l-4 data-[state=active]:border-primary data-[state=active]:pl-3 data-[state=active]:shadow-sm transition-all duration-200"
                 >
                   <Database className="w-4 h-4 mr-2" />
-                  Resources
+                  {t.resources}
                   {isSearching && searchResults.resources.length > 0 && (
                     <Badge variant="outline" className="ml-auto text-xs">
                       {searchResults.resources.length}
@@ -621,7 +625,7 @@ export default function DDMADashboardPage() {
                   className="justify-start text-left h-12 data-[state=active]:bg-background data-[state=active]:border-l-4 data-[state=active]:border-primary data-[state=active]:pl-3 data-[state=active]:shadow-sm transition-all duration-200"
                 >
                   <Radio className="w-4 h-4 mr-2" />
-                  Communications
+                  {t.communications}
                   {isSearching && searchResults.communications.length > 0 && (
                     <Badge variant="default" className="ml-auto text-xs">
                       {searchResults.communications.length}

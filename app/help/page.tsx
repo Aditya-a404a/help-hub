@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import Link from "next/link";
 import {
   Card,
@@ -967,6 +968,7 @@ export default function HelpPage() {
             >
               Emergency
             </button>
+            <LanguageSwitcher />
             <ThemeSwitcher />
           </nav>
         </div>

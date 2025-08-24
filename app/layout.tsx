@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/lib/hooks/useAuth";
+import { I18nProvider } from "@/lib/i18n";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -27,9 +28,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AuthProvider>
-            {children}
-          </AuthProvider>
+          <I18nProvider>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </I18nProvider>
         </ThemeProvider>
       </body>
     </html>
