@@ -57,6 +57,20 @@ export default function HelpPage() {
   const [showEmergencyBanner, setShowEmergencyBanner] = useState(true);
   const [selectedSection, setSelectedSection] = useState("emergency");
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [volunteerFormData, setVolunteerFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    serviceType: "Medical",
+    location: "",
+    latitude: "",
+    longitude: "",
+    resources: "",
+    availability: "Immediate",
+    experience: "",
+    specializations: [] as string[],
+  });
+  const [isVolunteerSubmitting, setIsVolunteerSubmitting] = useState(false);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -67,6 +81,27 @@ export default function HelpPage() {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
+    }));
+  };
+
+  const handleVolunteerInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    const { name, value } = e.target;
+    setVolunteerFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleSpecializationChange = (specialization: string) => {
+    setVolunteerFormData((prev) => ({
+      ...prev,
+      specializations: prev.specializations.includes(specialization)
+        ? prev.specializations.filter((s) => s !== specialization)
+        : [...prev.specializations, specialization],
     }));
   };
 
@@ -112,6 +147,50 @@ export default function HelpPage() {
     }
   };
 
+  const handleGetVolunteerLocation = () => {
+    if (navigator.geolocation) {
+      setIsVolunteerSubmitting(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setVolunteerFormData((prev) => ({
+            ...prev,
+            latitude: latitude.toString(),
+            longitude: longitude.toString(),
+            location: `Coordinates: ${latitude.toFixed(4)}, ${longitude.toFixed(
+              4
+            )}`,
+          }));
+          setIsVolunteerSubmitting(false);
+          toast.success("Location acquired successfully", {
+            description: `Coordinates: ${latitude.toFixed(
+              4
+            )}, ${longitude.toFixed(4)}`,
+            duration: 4000,
+          });
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          toast.error("Unable to acquire location", {
+            description: "Please enter location manually or try again.",
+            duration: 4000,
+          });
+          setIsVolunteerSubmitting(false);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000,
+        }
+      );
+    } else {
+      toast.error("Geolocation not supported", {
+        description: "Your browser does not support location services.",
+        duration: 4000,
+      });
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.mobileNumber || !formData.description) {
@@ -140,6 +219,50 @@ export default function HelpPage() {
         latitude: "",
         longitude: "",
         locationCaptured: false,
+      });
+    }, 2000);
+  };
+
+  const handleVolunteerSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (
+      !volunteerFormData.name ||
+      !volunteerFormData.email ||
+      !volunteerFormData.phone
+    ) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    if (!volunteerFormData.latitude || !volunteerFormData.longitude) {
+      alert("Please provide your location");
+      return;
+    }
+
+    setIsVolunteerSubmitting(true);
+
+    // Simulate API call
+    setTimeout(() => {
+      console.log("Volunteer registration submitted:", volunteerFormData);
+      toast.success("Volunteer registration successful!", {
+        description: "Thank you for volunteering. You will be contacted soon.",
+        duration: 5000,
+      });
+      setIsVolunteerSubmitting(false);
+
+      // Reset form
+      setVolunteerFormData({
+        name: "",
+        email: "",
+        phone: "",
+        serviceType: "Medical",
+        location: "",
+        latitude: "",
+        longitude: "",
+        resources: "",
+        availability: "Immediate",
+        experience: "",
+        specializations: [],
       });
     }, 2000);
   };
@@ -592,6 +715,260 @@ export default function HelpPage() {
           </div>
         );
 
+      case "volunteers":
+        return (
+          <div>
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-foreground mb-4">
+                Volunteer Registration
+              </h1>
+              <p className="text-lg text-muted-foreground">
+                Join our emergency response team. Register your skills,
+                location, and resources to help during emergencies.
+              </p>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Volunteer Information</CardTitle>
+                <CardDescription>
+                  Please provide your details and services you can offer
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleVolunteerSubmit} className="space-y-6">
+                  {/* Personal Information */}
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Full Name *
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={volunteerFormData.name}
+                        onChange={handleVolunteerInputChange}
+                        className="w-full px-4 py-3 border border-input rounded-lg bg-background text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                        placeholder="John Doe"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Email *
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={volunteerFormData.email}
+                        onChange={handleVolunteerInputChange}
+                        className="w-full px-4 py-3 border border-input rounded-lg bg-background text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                        placeholder="john@example.com"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Phone Number *
+                      </label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={volunteerFormData.phone}
+                        onChange={handleVolunteerInputChange}
+                        className="w-full px-4 py-3 border border-input rounded-lg bg-background text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                        placeholder="+1 (555) 123-4567"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Service Information */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Service Type
+                      </label>
+                      <select
+                        name="serviceType"
+                        value={volunteerFormData.serviceType}
+                        onChange={handleVolunteerInputChange}
+                        className="w-full px-4 py-3 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                      >
+                        <option value="Medical">Medical</option>
+                        <option value="Rescue">Rescue Team</option>
+                        <option value="Fire">Fire Safety</option>
+                        <option value="Police">Law Enforcement</option>
+                        <option value="Transport">Transportation</option>
+                        <option value="Communication">Communication</option>
+                        <option value="Logistics">Logistics</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Availability
+                      </label>
+                      <select
+                        name="availability"
+                        value={volunteerFormData.availability}
+                        onChange={handleVolunteerInputChange}
+                        className="w-full px-4 py-3 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                      >
+                        <option value="Immediate">Immediate</option>
+                        <option value="Within 1 hour">Within 1 hour</option>
+                        <option value="Within 4 hours">Within 4 hours</option>
+                        <option value="Within 24 hours">Within 24 hours</option>
+                        <option value="On call">On call</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Location Section */}
+                  <div className="bg-muted/50 p-5 rounded-xl border">
+                    <div className="text-center mb-4">
+                      <h3 className="text-base font-semibold text-foreground mb-2">
+                        Location Information
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        We need your location to coordinate emergency responses
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-center">
+                      <Button
+                        type="button"
+                        onClick={handleGetVolunteerLocation}
+                        disabled={isVolunteerSubmitting}
+                        variant="outline"
+                        className="font-medium py-3 px-6 text-base"
+                      >
+                        {isVolunteerSubmitting ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                            Acquiring Location...
+                          </>
+                        ) : (
+                          <>Acquire My Location</>
+                        )}
+                      </Button>
+                    </div>
+
+                    {volunteerFormData.location && (
+                      <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/10 rounded-lg border border-green-200 dark:border-green-800">
+                        <p className="text-sm text-green-700 dark:text-green-300">
+                          <strong>Location acquired:</strong>{" "}
+                          {volunteerFormData.location}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Specializations */}
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-3">
+                      Specializations (Select all that apply)
+                    </label>
+                    <div className="grid md:grid-cols-3 gap-3">
+                      {[
+                        "First Aid",
+                        "CPR",
+                        "Trauma Care",
+                        "Emergency Medicine",
+                        "Search & Rescue",
+                        "Water Rescue",
+                        "Mountain Rescue",
+                        "Fire Safety",
+                        "Hazardous Materials",
+                        "Emergency Driving",
+                        "Communication",
+                        "Logistics",
+                        "Food Distribution",
+                        "Shelter Management",
+                        "Childcare",
+                        "Elderly Care",
+                      ].map((spec) => (
+                        <label
+                          key={spec}
+                          className="flex items-center space-x-2 cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={volunteerFormData.specializations.includes(
+                              spec
+                            )}
+                            onChange={() => handleSpecializationChange(spec)}
+                            className="rounded border-gray-300 text-primary focus:ring-primary"
+                          />
+                          <span className="text-sm text-foreground">
+                            {spec}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Resources and Experience */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Available Resources
+                      </label>
+                      <textarea
+                        name="resources"
+                        value={volunteerFormData.resources}
+                        onChange={handleVolunteerInputChange}
+                        className="w-full px-4 py-3 border border-input rounded-lg bg-background text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                        placeholder="e.g., Medical supplies, vehicle, equipment, etc."
+                        rows={3}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Relevant Experience
+                      </label>
+                      <textarea
+                        name="experience"
+                        value={volunteerFormData.experience}
+                        onChange={handleVolunteerInputChange}
+                        className="w-full px-4 py-3 border border-input rounded-lg bg-background text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-ring focus:border-transparent transition-all"
+                        placeholder="e.g., 5 years as paramedic, disaster response training, etc."
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="text-center">
+                    <Button
+                      type="submit"
+                      disabled={
+                        isVolunteerSubmitting ||
+                        !volunteerFormData.latitude ||
+                        !volunteerFormData.longitude
+                      }
+                      className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600 text-lg py-4 px-10 font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all rounded-xl"
+                    >
+                      {isVolunteerSubmitting ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Registering Volunteer...
+                        </>
+                      ) : (
+                        "REGISTER AS VOLUNTEER"
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        );
+
       case "contact":
         return (
           <div>
@@ -776,6 +1153,20 @@ export default function HelpPage() {
               <div className="flex items-center gap-3">
                 <Ambulance className="w-5 h-5" />
                 <span className="font-medium">Emergency Services</span>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setSelectedSection("volunteers")}
+              className={`w-full text-left p-3 rounded-lg transition-all ${
+                selectedSection === "volunteers"
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Users className="w-5 h-5" />
+                <span className="font-medium">Volunteers</span>
               </div>
             </button>
 
