@@ -224,43 +224,7 @@ export default function DDMADashboardPage() {
   }, []);
 
   const loadDDMAData = async () => {
-
-
-    1/1
-
-    Next.js 15.5.0
-    Turbopack
-    Runtime Error
-    
-    
-    Module [project]/node_modules/leaflet/dist/leaflet.css [app-client] (css) was instantiated because it was required from module [project]/components/route-finder.tsx [app-client] (ecmascript), but the module factory is not available. It might have been deleted in an HMR update.
-    
-    components/route-finder.tsx (41:3) @ {module evaluation}
-    
-    
-      39 | let L: any;
-      40 | if (typeof window !== "undefined") {
-    > 41 |   L = require("leaflet");
-         |   ^
-      42 |   require("leaflet/dist/leaflet.css");
-      43 | }
-      44 |
-    Call Stack
-    20
-    
-    Show 16 ignore-listed frame(s)
-    {module evaluation}
-    
-    components/route-finder.tsx (41:3)
-    {module evaluation}
-    
-    components/route-finder.tsx (530:16)
-    <unknown>
-    .next/static/chunks/components_8b3e4bbf._.js (67:16)
-    DDMADashboardPage
-    app/dashboard/page.tsx (1804:19)
-    1
-    2    try {
+    try {
       setIsLoading(true);
 
       // Load real disaster alerts (flood alerts)
