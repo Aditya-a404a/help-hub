@@ -11,6 +11,7 @@ export interface Translation {
   helper: string;
   geminiAI: string;
   needHelp: string;
+  headerTitle: string;
   
   // Common actions
   search: string;
@@ -60,6 +61,13 @@ export interface Translation {
   welcomeSubtitle: string;
   emergencyResourcesLink: string;
   loadingMap: string;
+  coordinationHubSubtitle: string;
+  
+  // Our Goal Section
+  ourGoalTitle: string;
+  ourGoalSubtitle: string;
+  ourGoalDescription: string;
+  learnMore: string;
   
   // Gemini Chat
   chatTitle: string;
@@ -94,4 +102,11 @@ export interface Translation {
   sendingToAgents: string;
   locationData: string;
   mapVisualization: string;
+  
+  // Footer Sections
+  footerOurGoal: string;
+  footerOurGoalDesc: string;
+  footerFeatures: string;
+  footerResources: string;
+  footerContact: string;
 }

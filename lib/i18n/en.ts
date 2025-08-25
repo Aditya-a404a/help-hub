@@ -10,6 +10,7 @@ export const en: Translation = {
   helper: 'Helper',
   geminiAI: 'Gemini AI',
   needHelp: 'Need Help',
+  headerTitle: 'NDMA India',
   
   // Common actions
   search: 'Search',
@@ -55,10 +56,17 @@ export const en: Translation = {
   rescueStrategy: 'Rescue Strategy',
   
   // Home page
-  welcomeTitle: 'Disaster Response',
-  welcomeSubtitle: 'Your trusted partner in emergency management and disaster response',
+  welcomeTitle: 'India Disaster Management',
+  welcomeSubtitle: 'Official digital platform of the National Disaster Management Authority (NDMA)',
   emergencyResourcesLink: 'Explore Emergency Resources',
   loadingMap: 'Loading map...',
+  coordinationHubSubtitle: 'NDMA Digital Platform',
+  
+  // Our Goal Section
+  ourGoalTitle: 'Our Mission',
+  ourGoalSubtitle: 'Building a Safer Tomorrow',
+  ourGoalDescription: 'We are dedicated to creating a comprehensive emergency response ecosystem that connects communities, responders, and resources in real-time. Our platform empowers individuals and organizations to work together effectively during crises.',
+  learnMore: 'Learn More',
   
   // Gemini Chat
   chatTitle: 'AI Rescue Assistant',
@@ -93,4 +101,11 @@ export const en: Translation = {
   sendingToAgents: 'Sending to agents...',
   locationData: 'Location Data',
   mapVisualization: 'Map Visualization',
+  
+  // Footer Sections
+  footerOurGoal: 'Our Mission',
+  footerOurGoalDesc: 'NDMA\'s real-time coordination platform for emergency response teams across India.',
+  footerFeatures: 'Features',
+  footerResources: 'Resources',
+  footerContact: 'Contact',
 };

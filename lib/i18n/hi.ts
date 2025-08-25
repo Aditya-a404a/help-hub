@@ -10,6 +10,7 @@ export const hi: Translation = {
   helper: 'सहायक',
   geminiAI: 'जेमिनी AI',
   needHelp: 'सहायता चाहिए',
+  headerTitle: 'एनडीएमए भारत',
   
   // Common actions
   search: 'खोजें',
@@ -55,10 +56,17 @@ export const hi: Translation = {
   rescueStrategy: 'बचाव रणनीति',
   
   // Home page
-  welcomeTitle: 'आपदा प्रतिक्रिया',
-  welcomeSubtitle: 'आपातकालीन प्रबंधन और आपदा प्रतिक्रिया में आपका विश्वसनीय साझीदार',
+  welcomeTitle: 'भारत आपदा प्रबंधन',
+  welcomeSubtitle: 'राष्ट्रीय आपदा प्रबंधन प्राधिकरण (एनडीएमए) का आधिकारिक डिजिटल प्लेटफॉर्म',
   emergencyResourcesLink: 'आपातकालीन संसाधन देखें',
   loadingMap: 'मानचित्र लोड हो रहा है...',
+  coordinationHubSubtitle: 'एनडीएमए डिजिटल प्लेटफॉर्म',
+  
+  // Our Goal Section
+  ourGoalTitle: 'हमारा लक्ष्य',
+  ourGoalSubtitle: 'एक सुरक्षित कल का निर्माण',
+  ourGoalDescription: 'हम एक व्यापक आपातकालीन प्रतिक्रिया पारिस्थितिकी तंत्र बनाने के लिए समर्पित हैं जो समुदायों, प्रतिक्रियाकर्ताओं और संसाधनों को वास्तविक समय में जोड़ता है। हमारा मंच व्यक्तियों और संगठनों को संकट के दौरान प्रभावी ढंग से एक साथ काम करने में सशक्त बनाता है।',
+  learnMore: 'और जानें',
   
   // Gemini Chat
   chatTitle: 'AI बचाव सहायक',
@@ -93,4 +101,11 @@ export const hi: Translation = {
   sendingToAgents: 'एजेंटों को भेज रहे हैं...',
   locationData: 'स्थान डेटा',
   mapVisualization: 'मानचित्र दृश्यीकरण',
+  
+  // Footer Sections
+  footerOurGoal: 'हमारा लक्ष्य',
+  footerOurGoalDesc: 'भारत भर में आपातकालीन प्रतिक्रिया टीमों के लिए एनडीएमए का वास्तविक समय समन्वय प्लेटफॉर्म।',
+  footerFeatures: 'विशेषताएं',
+  footerResources: 'संसाधन',
+  footerContact: 'संपर्क',
 };

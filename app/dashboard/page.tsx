@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { disasterAPI } from "@/lib/disaster-api";
 import { useTranslation } from "@/lib/i18n";
+import { config } from "@/lib/config";
 import AuthModal from "@/components/auth-modal";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import WeatherWidget from "@/components/ui/weather-widget";
@@ -193,6 +194,7 @@ export default function DDMADashboardPage() {
   const [selectedIncident, setSelectedIncident] =
     useState<DisasterAlert | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isSupportIframeOpen, setIsSupportIframeOpen] = useState(false);
 
   // Search functionality
   const [searchQuery, setSearchQuery] = useState("");
@@ -505,6 +507,122 @@ export default function DDMADashboardPage() {
     setSelectedIncident(null);
   };
 
+  // Handle Send Support - Copy context and open iframe
+  const handleSendSupport = async (incident: DisasterAlert) => {
+    try {
+      // Create comprehensive context text with all project information
+      const contextText = `🚨 COMPREHENSIVE EMERGENCY ALERT CONTEXT
+
+=== INCIDENT DETAILS ===
+Disaster Type: ${incident.type.toUpperCase()}
+Location: ${incident.location}
+Severity: ${incident.severity.toUpperCase()}
+Status: ${incident.status}
+Affected Population: ${incident.affectedPopulation.toLocaleString()} people
+Coordinates: [${incident.coordinates[0]}, ${incident.coordinates[1]}]
+Description: ${incident.description}
+Timestamp: ${incident.timestamp}
+Response Level: ${incident.responseLevel.toUpperCase()}
+
+=== CURRENT SYSTEM STATUS ===
+Response Teams Deployed: ${responseTeams.filter(t => t.status === 'deployed').length}
+Response Teams Available: ${responseTeams.filter(t => t.status === 'available').length}
+Total Response Teams: ${responseTeams.length}
+Available Resources: ${resourceInventory.filter(r => r.status === 'available').length} items
+Total Resources: ${resourceInventory.length}
+Communication Channels Active: ${communicationChannels.filter(c => c.status === 'active').length}/${communicationChannels.length}
+Active Disaster Alerts: ${disasterAlerts.filter(a => a.status === 'active').length}
+
+=== PROJECT CONTEXT ===
+Platform: Help Hub - Disaster Response Management System
+Organization: National Disaster Management Authority (NDMA) India
+Version: 1.0.0
+Environment: ${process.env.NODE_ENV || 'development'}
+District: ${districtName}
+Current Time: ${currentTime}
+
+=== TECHNICAL ARCHITECTURE ===
+Frontend: Next.js 15.3.1 with TypeScript, Tailwind CSS, Radix UI
+Maps: Leaflet + React-Leaflet for real-time incident mapping
+AI Integration: Google Gemini AI for emergency strategy generation
+Weather: OpenWeatherMap API integration for real-time weather data
+Authentication: Supabase integration with role-based access
+Real-time Data: WebSocket connections for live updates
+
+=== INTEGRATED SYSTEMS ===
+- Social Media Monitoring: Real-time SOS message detection
+- IVR System: Emergency call monitoring and routing
+- Flood Prediction: AI-powered risk assessment
+- Route Optimization: Emergency vehicle routing
+- Communication Channels: Radio, satellite, mobile, emergency broadcast
+- Geographic Intelligence: Chennai Emergency Map, India Map, World Map
+
+=== RESPONSE CAPABILITIES ===
+- Medical Response Teams: ${responseTeams.filter(t => t.type === 'medical').length} teams
+- Fire Response Teams: ${responseTeams.filter(t => t.type === 'fire').length} teams
+- Police Response Teams: ${responseTeams.filter(t => t.type === 'police').length} teams
+- Rescue Teams: ${responseTeams.filter(t => t.type === 'rescue').length} teams
+- Civil Defense: ${responseTeams.filter(t => t.type === 'civil').length} teams
+
+=== RESOURCE INVENTORY ===
+Medical Resources: ${resourceInventory.filter(r => r.category === 'medical').length} items
+Food & Water: ${resourceInventory.filter(r => r.category === 'food' || r.category === 'water').length} items
+Shelter Resources: ${resourceInventory.filter(r => r.category === 'shelter').length} items
+Transport Resources: ${resourceInventory.filter(r => r.category === 'transport').length} items
+
+=== COMMUNICATION STATUS ===
+Emergency Broadcast: ${communicationChannels.find(c => c.type === 'emergency_broadcast')?.status || 'Unknown'}
+Radio Systems: ${communicationChannels.find(c => c.type === 'radio')?.status || 'Unknown'}
+Satellite Communication: ${communicationChannels.find(c => c.type === 'satellite')?.status || 'Unknown'}
+Mobile Networks: ${communicationChannels.find(c => c.type === 'mobile')?.status || 'Unknown'}
+
+=== API INTEGRATIONS ===
+Disaster API Base: ${config.disasterAPI.baseURL}
+Weather API: OpenWeatherMap (Chennai focus)
+Gemini AI: Google Generative AI integration
+Social Media: Real-time monitoring APIs
+IVR Systems: Emergency call center integration
+
+=== EMERGENCY PROTOCOLS ===
+- Immediate Response: Critical incidents trigger automatic team deployment
+- Resource Allocation: AI-powered optimization for maximum efficiency
+- Communication: Multi-channel emergency broadcasting system
+- Coordination: Centralized command center with real-time updates
+- Evacuation: Automated route planning and safe zone designation
+
+=== SUPPORT REQUIREMENTS ===
+This emergency requires immediate coordination and support from:
+1. Emergency Response Teams
+2. Medical Personnel and Resources
+3. Communication System Operators
+4. Resource Management Coordinators
+5. Geographic Information Specialists
+6. AI Strategy Assistants
+
+Please provide immediate support and coordination for this emergency situation.
+
+=== CONTACT INFORMATION ===
+Platform: Help Hub Dashboard
+District: ${districtName}
+Incident ID: ${incident.id}
+Response Level: ${incident.responseLevel.toUpperCase()}
+Priority: IMMEDIATE ACTION REQUIRED`;
+
+      // Copy to clipboard
+      await navigator.clipboard.writeText(contextText);
+      
+      // Show success message (optional)
+      console.log('Emergency context copied to clipboard');
+      
+      // Open support iframe
+      setIsSupportIframeOpen(true);
+    } catch (error) {
+      console.error('Failed to copy context:', error);
+      // Fallback: open iframe anyway
+      setIsSupportIframeOpen(true);
+    }
+  };
+
   // Prevent body scroll when modal is open and handle keyboard events
   useEffect(() => {
     if (isGeminiModalOpen) {
@@ -594,14 +712,14 @@ export default function DDMADashboardPage() {
       <div className="h-12 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b flex items-center justify-between px-4">
         <div className="flex items-center gap-4">
           <h1 className="text-sm font-medium text-foreground">
-            DDMA Command Center
+          इंफीसुरक्षा
           </h1>
           <span className="text-xs text-muted-foreground">•</span>
           <span className="text-xs text-muted-foreground">{districtName}</span>
         </div>
         <div className="flex items-center gap-4">
           <div className="text-xs text-muted-foreground">{currentTime}</div>
-          {isAuthenticated && user ? (
+          {isAuthenticated && user && (
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground">
                 Welcome, {user.username}
@@ -615,15 +733,6 @@ export default function DDMADashboardPage() {
                 {t.signOut}
               </Button>
             </div>
-          ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-xs h-6"
-              onClick={() => setIsAuthModalOpen(true)}
-            >
-              Sign In (Optional)
-            </Button>
           )}
           <LanguageSwitcher />
           <ThemeSwitcher />
@@ -800,7 +909,7 @@ export default function DDMADashboardPage() {
             {(() => {
               const criticalIncidents = disasterAlerts.filter(
                 (alert) =>
-                  alert.status === "active" && alert.severity === "critical"
+                  alert.status === "active" && alert.severity === "high"
               );
               if (criticalIncidents.length > 0) {
                 return (
@@ -827,8 +936,7 @@ export default function DDMADashboardPage() {
                       className="bg-white text-red-700 hover:bg-red-50 font-semibold text-xs h-7"
                       onClick={() => {
                         const incident = criticalIncidents[0];
-                        setSelectedIncident(incident);
-                        setIsGeminiModalOpen(true);
+                        handleSendSupport(incident);
                       }}
                     >
                       Send Support
@@ -892,8 +1000,9 @@ export default function DDMADashboardPage() {
               onValueChange={setSelectedTab}
               className="h-full"
             >
-              <TabsContent value="overview" className="h-full m-0">
-                {/* Red Alert Bar - Most Recent Incident With Action Buttons */}
+                            <TabsContent value="overview" className="h-full m-0">
+                {/* Red Banner - Most Recent Disaster Alert */}
+               
                 {/* Overview Tab */}
                 <div className="h-full grid grid-cols-3 gap-4">
                   {/* Map Section */}
@@ -1878,6 +1987,74 @@ export default function DDMADashboardPage() {
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
       />
+
+      {/* Support Iframe Modal */}
+      {isSupportIframeOpen && (
+        <>
+          {/* Full screen overlay */}
+          <div
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[999998]"
+            onClick={() => setIsSupportIframeOpen(false)}
+          />
+          {/* Modal content - Full screen with minimal padding */}
+          <div className="fixed inset-0 z-[999999]">
+            <div className="bg-background h-full w-full flex flex-col">
+              {/* Modal Header - Compact */}
+              <div className="flex items-center justify-between p-3 border-b bg-muted/30">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
+                    <AlertTriangle className="w-5 h-5 text-white" />
+                  </div>
+                  <h2 className="text-lg font-bold">Emergency Support Portal</h2>
+                  <span className="text-sm text-muted-foreground">• MCP Environment UI</span>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setIsSupportIframeOpen(false)}
+                  className="h-8 w-8 p-0 hover:bg-muted"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              {/* Success Message - Compact */}
+              <div className="p-3 bg-green-50 dark:bg-green-950/20 border-b border-green-200 dark:border-green-800">
+                <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
+                  <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs">✓</span>
+                  </div>
+                  <span className="text-sm font-medium">
+                    Emergency context copied to clipboard successfully!
+                  </span>
+                </div>
+              </div>
+              
+              {/* Full Screen Iframe - Takes remaining space */}
+              <div className="flex-1 p-2">
+                <iframe 
+                  src="http://127.0.0.1:8003/dev-ui/?app=mcp_env&session=e36ce4c5-3488-467e-aeea-0aadce1267d8"
+                  className="w-full h-full rounded-lg border border-border shadow-lg"
+                  title="MCP Environment UI"
+                  allow="fullscreen"
+                  sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
+                />
+              </div>
+              
+              {/* Footer - Simple close button */}
+              <div className="p-3 border-t bg-muted/20 flex justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsSupportIframeOpen(false)}
+                  className="px-6"
+                >
+                  Close Portal
+                </Button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Custom Scrollbar Styles and Modal Fixes */}
       <style jsx global>{`
