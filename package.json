@@ -4,7 +4,10 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "deploy:vercel": "vercel --prod",
+    "deploy:build": "npm run lint && npm run build",
+    "deploy:test": "npm run build && npm run start"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

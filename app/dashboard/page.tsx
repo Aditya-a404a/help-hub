@@ -13,6 +13,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { disasterAPI } from "@/lib/disaster-api";
 import { useTranslation } from "@/lib/i18n";
@@ -44,6 +52,8 @@ import {
   Filter,
   RefreshCw,
   X,
+  ChevronDown,
+  Clock,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 
@@ -186,7 +196,17 @@ export default function DDMADashboardPage() {
     CommunicationChannel[]
   >([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [districtName] = useState("Chennai Metropolitan Region");
+  // Region data with availability status
+  const regions = [
+    { id: "chennai", name: "Chennai Metropolitan Region", available: true },
+    { id: "mumbai", name: "Mumbai Metropolitan Region", available: false },
+    { id: "delhi", name: "Delhi National Capital Region", available: false },
+    { id: "bangalore", name: "Bangalore Metropolitan Region", available: false },
+    { id: "hyderabad", name: "Hyderabad Metropolitan Region", available: false },
+    { id: "kolkata", name: "Kolkata Metropolitan Region", available: false },
+  ];
+
+  const [selectedRegion, setSelectedRegion] = useState(regions[0]);
   const [currentTime] = useState(
     new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
   );
@@ -195,6 +215,7 @@ export default function DDMADashboardPage() {
     useState<DisasterAlert | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSupportIframeOpen, setIsSupportIframeOpen] = useState(false);
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false);
 
   // Search functionality
   const [searchQuery, setSearchQuery] = useState("");
@@ -222,6 +243,27 @@ export default function DDMADashboardPage() {
 
     return () => {
       document.removeEventListener("openAuthModal", handleOpenAuthModal);
+    };
+  }, []);
+
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsMapFullscreen(!!document.fullscreenElement);
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && document.fullscreenElement) {
+        document.exitFullscreen();
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
 
@@ -439,9 +481,9 @@ export default function DDMADashboardPage() {
 
     // Widget-specific search terms - more precise matching
     const widgetSearchMap = {
-      "Chennai Emergency Response Map": [
+      [`${selectedRegion.name} Emergency Response Map`]: [
         "map",
-        "chennai",
+        selectedRegion.name.toLowerCase().split(" ")[0],
         "emergency",
         "response",
       ],
@@ -538,7 +580,7 @@ Platform: Help Hub - Disaster Response Management System
 Organization: National Disaster Management Authority (NDMA) India
 Version: 1.0.0
 Environment: ${process.env.NODE_ENV || 'development'}
-District: ${districtName}
+District: ${selectedRegion.name}
 Current Time: ${currentTime}
 
 === TECHNICAL ARCHITECTURE ===
@@ -603,7 +645,7 @@ Please provide immediate support and coordination for this emergency situation.
 
 === CONTACT INFORMATION ===
 Platform: Help Hub Dashboard
-District: ${districtName}
+District: ${selectedRegion.name}
 Incident ID: ${incident.id}
 Response Level: ${incident.responseLevel.toUpperCase()}
 Priority: IMMEDIATE ACTION REQUIRED`;
@@ -660,13 +702,19 @@ Priority: IMMEDIATE ACTION REQUIRED`;
   const shouldHighlightWidget = (widgetTitle: string) => {
     if (!isSearching || !searchQuery.trim()) return false;
 
-    const widgetSearchMap = {
-      "Chennai Emergency Response Map": [
-        "map",
-        "chennai",
-        "emergency",
-        "response",
-      ],
+    // Handle dynamic region-based widget titles
+    if (widgetTitle.includes("Emergency Response Map")) {
+      const regionName = selectedRegion.name.toLowerCase().split(" ")[0];
+      const searchTerms = ["map", regionName, "emergency", "response"];
+      const lowerQuery = searchQuery.toLowerCase();
+      return searchTerms.some(
+        (term) =>
+          term.toLowerCase().includes(lowerQuery) ||
+          lowerQuery.includes(term.toLowerCase())
+      );
+    }
+
+    const widgetSearchMap: Record<string, string[]> = {
       "Active Danger Areas": ["active", "danger", "areas"],
       "Utility Vehicles": ["utility", "vehicles", "vehicles status"],
       "Authority Control": ["authority", "control"],
@@ -676,8 +724,7 @@ Priority: IMMEDIATE ACTION REQUIRED`;
       "IVR Monitor": ["ivr", "calls", "phone", "monitor"],
     };
 
-    const searchTerms =
-      widgetSearchMap[widgetTitle as keyof typeof widgetSearchMap];
+    const searchTerms = widgetSearchMap[widgetTitle];
     if (!searchTerms) return false;
 
     const lowerQuery = searchQuery.toLowerCase();
@@ -715,7 +762,48 @@ Priority: IMMEDIATE ACTION REQUIRED`;
           इंफीसुरक्षा
           </h1>
           <span className="text-xs text-muted-foreground">•</span>
-          <span className="text-xs text-muted-foreground">{districtName}</span>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-auto p-1 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50"
+              >
+                <span className="flex items-center gap-1">
+                  {selectedRegion.name}
+                  <ChevronDown className="h-3 w-3" />
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-64">
+              <DropdownMenuLabel className="text-xs font-medium">
+                Select Region
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {regions.map((region) => (
+                <DropdownMenuItem
+                  key={region.id}
+                  className={`text-xs ${
+                    region.available
+                      ? "cursor-pointer hover:bg-accent"
+                      : "cursor-not-allowed opacity-50"
+                  }`}
+                  onClick={() => region.available && setSelectedRegion(region)}
+                  disabled={!region.available}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span>{region.name}</span>
+                    {!region.available && (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        <span>Coming Soon</span>
+                      </div>
+                    )}
+                  </div>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
         <div className="flex items-center gap-4">
           <div className="text-xs text-muted-foreground">{currentTime}</div>
@@ -1006,32 +1094,64 @@ Priority: IMMEDIATE ACTION REQUIRED`;
                 {/* Overview Tab */}
                 <div className="h-full grid grid-cols-3 gap-4">
                   {/* Map Section */}
-                  {shouldShowWidget("Chennai Emergency Response Map") && (
+                  {shouldShowWidget(`${selectedRegion.name} Emergency Response Map`) && (
                     <Card
                       className={`h-full transition-all duration-200 ${
-                        shouldHighlightWidget("Chennai Emergency Response Map")
+                        shouldHighlightWidget(`${selectedRegion.name} Emergency Response Map`)
                           ? "border-2 border-primary shadow-lg bg-primary/5"
                           : ""
                       }`}
                     >
                       <CardHeader className="pb-3">
-                        <CardTitle className="text-sm flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-blue-600" />
-                          Chennai Emergency Response Map
-                          {shouldHighlightWidget(
-                            "Chennai Emergency Response Map"
-                          ) && (
-                            <Badge
-                              variant="secondary"
-                              className="text-xs ml-auto"
-                            >
-                              Search Match
-                            </Badge>
-                          )}
-                        </CardTitle>
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-blue-600" />
+                            {selectedRegion.name} Emergency Response Map
+                            {shouldHighlightWidget(
+                              `${selectedRegion.name} Emergency Response Map`
+                            ) && (
+                              <Badge
+                                variant="secondary"
+                                className="text-xs ml-auto"
+                              >
+                                Search Match
+                              </Badge>
+                            )}
+                          </CardTitle>
+                          <Button
+                            size="sm"
+                            variant={isMapFullscreen ? "destructive" : "outline"}
+                            className={`h-7 w-7 p-0 transition-all duration-200 fullscreen-btn ${
+                              isMapFullscreen 
+                                ? "hover:bg-red-100 dark:hover:bg-red-900/20" 
+                                : "hover:bg-muted"
+                            }`}
+                            onClick={() => {
+                              const mapCard = document.querySelector('[data-map-card="chennai"]');
+                              if (mapCard) {
+                                if (document.fullscreenElement) {
+                                  document.exitFullscreen();
+                                } else {
+                                  mapCard.requestFullscreen().catch(err => {
+                                    console.log('Fullscreen request failed:', err);
+                                  });
+                                }
+                              }
+                            }}
+                            title={isMapFullscreen ? "Exit Fullscreen (ESC)" : "Enter Fullscreen"}
+                          >
+                            {isMapFullscreen ? (
+                              <X className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </div>
                       </CardHeader>
                       <CardContent className="h-[calc(100%-3rem)]">
-                        <ChennaiMapComponent />
+                        <div data-map-card="chennai" className="h-full">
+                          <ChennaiMapComponent />
+                        </div>
                       </CardContent>
                     </Card>
                   )}
@@ -1988,6 +2108,17 @@ Priority: IMMEDIATE ACTION REQUIRED`;
         onClose={() => setIsAuthModalOpen(false)}
       />
 
+      {/* Fullscreen Indicator */}
+      {isMapFullscreen && (
+        <div className="fullscreen-indicator show">
+          <div className="flex items-center gap-2">
+            <Eye className="w-4 h-4" />
+                            <span>{selectedRegion.name} Emergency Response Map - Fullscreen</span>
+            <span className="text-xs opacity-75">Press ESC to exit</span>
+          </div>
+        </div>
+      )}
+
       {/* Support Iframe Modal */}
       {isSupportIframeOpen && (
         <>
@@ -2108,6 +2239,71 @@ Priority: IMMEDIATE ACTION REQUIRED`;
 
         [style*="z-index: 1000000"] {
           z-index: 1000000 !important;
+        }
+
+        /* Fullscreen styles */
+        [data-map-card="chennai"]:fullscreen {
+          background: #000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0 !important;
+          margin: 0 !important;
+        }
+
+        [data-map-card="chennai"]:fullscreen .leaflet-container {
+          width: 100vw !important;
+          height: 100vh !important;
+          border-radius: 0 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+
+        [data-map-card="chennai"]:fullscreen .leaflet-control-container {
+          z-index: 1000 !important;
+        }
+
+        [data-map-card="chennai"]:fullscreen .leaflet-control-zoom {
+          margin: 20px !important;
+        }
+
+        [data-map-card="chennai"]:fullscreen .leaflet-control-attribution {
+          bottom: 10px !important;
+          right: 10px !important;
+        }
+
+        /* Fullscreen indicator */
+        .fullscreen-indicator {
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: rgba(0, 0, 0, 0.8);
+          color: white;
+          padding: 8px 16px;
+          border-radius: 20px;
+          font-size: 12px;
+          font-weight: 500;
+          z-index: 9999;
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        }
+
+        .fullscreen-indicator.show {
+          opacity: 1;
+        }
+
+        /* Fullscreen button animation */
+        .fullscreen-btn {
+          transition: all 0.2s ease;
+        }
+
+        .fullscreen-btn:hover {
+          transform: scale(1.05);
+        }
+
+        .fullscreen-btn:active {
+          transform: scale(0.95);
         }
       `}</style>
     </div>

@@ -253,6 +253,82 @@ export default function HelpPage() {
               </AlertDescription>
             </Alert>
 
+            {/* इंफीसुरक्षा Emergency Alert Section */}
+            <Card className="mb-8 border-blue-200 bg-blue-50 dark:bg-blue-950/20 dark:border-blue-800">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-blue-800 dark:text-blue-200">
+                  <Shield className="w-5 h-5" />
+                  इंफीसुरक्षा Emergency Alert System
+                </CardTitle>
+                <CardDescription className="text-blue-700 dark:text-blue-300">
+                  Send immediate emergency alerts to response teams via इंफीसुरक्षा platform
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col sm:flex-row gap-4 items-center">
+                  <div className="flex-1">
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                      <strong>Quick Alert:</strong> Click the button below to send an emergency alert 
+                      to इंफीसुरक्षा with predefined emergency details. This will immediately notify 
+                      response teams and start the emergency workflow.
+                    </p>
+                    <div className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
+                      <p><strong>Location:</strong> Dharavi</p>
+                      <p><strong>Flood Area:</strong> 12.5 km²</p>
+                      <p><strong>Urgency:</strong> HIGH</p>
+                      <p><strong>Victim:</strong> Rajesh Kumar</p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={async () => {
+                      try {
+                        // Make GET request to इंफीसुरक्षा API
+                        const response = await fetch("https://infyrescue.app.n8n.cloud/webhook/flood-victims?location=Dharavi&flood_area=12.5&urgency=HIGH&victim_name=Rajesh%20Kumar&victim_phone=919653638477&victim_address=Building%20A%20Floor%203&family_count=4", {
+                          method: 'GET',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                        });
+
+                        if (response.ok) {
+                          const result = await response.json();
+                          console.log("इंफीसुरक्षा API response:", result);
+                          
+                          if (result.message === "Workflow was started") {
+                            toast.success("Emergency alert sent to इंफीसुरक्षा successfully!", {
+                              description: "Response teams have been notified via इंफीसुरक्षा platform",
+                              duration: 5000,
+                            });
+                          } else {
+                            toast.success("Emergency alert sent to इंफीसुरक्षा!", {
+                              description: "Response teams have been notified",
+                              duration: 5000,
+                            });
+                          }
+                        } else {
+                          console.error("इंफीसुरक्षा API error:", response.status, response.statusText);
+                          toast.error("Failed to send alert to इंफीसुरक्षा", {
+                            description: "Please try again or contact emergency services directly",
+                            duration: 5000,
+                          });
+                        }
+                      } catch (error) {
+                        console.error("इंफीसुरक्षा API call failed:", error);
+                        toast.error("Failed to send alert to इंफीसुरक्षा", {
+                          description: "Network error - please try again",
+                          duration: 5000,
+                        });
+                      }
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 text-lg shadow-lg hover:shadow-xl transition-all duration-200 flex items-center gap-3"
+                  >
+                    <Shield className="w-6 h-6" />
+                    SEND इंफीसुरक्षा ALERT
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Show Emergency Form Button */}
             {!showEmergencyBanner && (
               <div className="text-center mb-8">
@@ -389,24 +465,74 @@ export default function HelpPage() {
                         </p>
                       </div>
 
-                      <Button
-                        type="submit"
-                        disabled={
-                          isSubmitting ||
-                          !formData.latitude ||
-                          !formData.longitude
-                        }
-                        className="bg-red-600 hover:bg-red-700 text-white border-red-600 text-lg py-4 px-10 font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all rounded-xl"
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                            Sending Emergency Alert...
-                          </>
-                        ) : (
-                          "SEND EMERGENCY ALERT"
-                        )}
-                      </Button>
+                      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                        <Button
+                          type="submit"
+                          disabled={
+                            isSubmitting ||
+                            !formData.latitude ||
+                            !formData.longitude
+                          }
+                          className="bg-red-600 hover:bg-red-700 text-white border-red-600 text-lg py-4 px-10 font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-all rounded-xl"
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Sending Emergency Alert...
+                            </>
+                          ) : (
+                            "SEND EMERGENCY ALERT"
+                          )}
+                        </Button>
+                        
+                        <Button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              // Make GET request to इंफीसुरक्षा API
+                              const response = await fetch("https://infyrescue.app.n8n.cloud/webhook/flood-victims?location=Dharavi&flood_area=12.5&urgency=HIGH&victim_name=Rajesh%20Kumar&victim_phone=919653638477&victim_address=Building%20A%20Floor%203&family_count=4", {
+                                method: 'GET',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                },
+                              });
+
+                              if (response.ok) {
+                                const result = await response.json();
+                                console.log("इंफीसुरक्षा API response:", result);
+                                
+                                if (result.message === "Workflow was started") {
+                                  toast.success("Emergency alert sent to इंफीसुरक्षा successfully!", {
+                                    description: "Response teams have been notified via इंफीसुरक्षा platform",
+                                    duration: 5000,
+                                  });
+                                } else {
+                                  toast.success("Emergency alert sent to इंफीसुरक्षा!", {
+                                    description: "Response teams have been notified",
+                                    duration: 5000,
+                                  });
+                                }
+                              } else {
+                                console.error("इंफीसुरक्षा API error:", response.status, response.statusText);
+                                toast.error("Failed to send alert to इंफीसुरक्षा", {
+                                  description: "Please try again or contact emergency services directly",
+                                  duration: 5000,
+                                });
+                              }
+                            } catch (error) {
+                              console.error("इंफीसुरक्षा API call failed:", error);
+                              toast.error("Failed to send alert to इंफीसुरक्षा", {
+                                description: "Network error - please try again",
+                                duration: 5000,
+                              });
+                            }
+                          }}
+                          className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600 text-lg py-4 px-10 font-bold transition-all rounded-xl"
+                        >
+                          <Shield className="w-5 h-5 mr-2" />
+                          इंफीसुरक्षा ALERT
+                        </Button>
+                      </div>
                     </div>
                   </form>
                 </div>
@@ -939,7 +1065,7 @@ export default function HelpPage() {
                   <div>
                     <p className="font-medium">Email Support</p>
                     <p className="text-sm text-muted-foreground">
-                      support@infyrescue.com
+                      support@इंफीसुरक्षा.com
                     </p>
                   </div>
                 </div>
@@ -971,7 +1097,7 @@ export default function HelpPage() {
             href="/"
             className="text-2xl font-bold text-foreground hover:text-primary transition-colors"
           >
-            InfyRescue
+            इंफीसुरक्षा
           </Link>
           <nav className="flex items-center gap-6">
             <Link
@@ -980,12 +1106,61 @@ export default function HelpPage() {
             >
               Dashboard
             </Link>
-            <button
-              onClick={() => setShowEmergencyBanner(true)}
-              className="bg-red-600 hover:bg-red-700 text-white font-medium transition-colors px-4 py-2 rounded-md shadow-sm hover:shadow-md"
-            >
-              Emergency
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowEmergencyBanner(true)}
+                className="bg-red-600 hover:bg-red-700 text-white font-medium transition-colors px-4 py-2 rounded-md shadow-sm hover:shadow-md"
+              >
+                Emergency
+              </button>
+              
+              <button
+                onClick={async () => {
+                  try {
+                    // Make GET request to इंफीसुरक्षा API
+                    const response = await fetch("https://infyrescue.app.n8n.cloud/webhook/flood-victims?location=Dharavi&flood_area=12.5&urgency=HIGH&victim_name=Rajesh%20Kumar&victim_phone=919653638477&victim_address=Building%20A%20Floor%203&family_count=4", {
+                      method: 'GET',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                    });
+
+                    if (response.ok) {
+                      const result = await response.json();
+                      console.log("इंफीसुरक्षा API response:", result);
+                      
+                      if (result.message === "Workflow was started") {
+                        toast.success("Emergency alert sent to इंफीसुरक्षा successfully!", {
+                          description: "Response teams have been notified via इंफीसुरक्षा platform",
+                          duration: 5000,
+                        });
+                      } else {
+                        toast.success("Emergency alert sent to इंफीसुरक्षा!", {
+                          description: "Response teams have been notified",
+                          duration: 5000,
+                        });
+                      }
+                    } else {
+                      console.error("इंफीसुरक्षा API error:", response.status, response.statusText);
+                      toast.error("Failed to send alert to इंफीसुरक्षा", {
+                        description: "Please try again or contact emergency services directly",
+                        duration: 5000,
+                      });
+                    }
+                  } catch (error) {
+                    console.error("इंफीसुरक्षा API call failed:", error);
+                    toast.error("Failed to send alert to इंफीसुरक्षा", {
+                      description: "Network error - please try again",
+                      duration: 5000,
+                    });
+                  }
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors px-4 py-2 rounded-md shadow-sm hover:shadow-md flex items-center gap-2"
+              >
+                <Shield className="w-4 h-4" />
+                इंफीसुरक्षा Alert
+              </button>
+            </div>
             <LanguageSwitcher />
             <ThemeSwitcher />
           </nav>

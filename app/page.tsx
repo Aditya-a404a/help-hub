@@ -163,12 +163,7 @@ export default function Home() {
                         Help & Support
                       </Link>
                     </li>
-                    <li className="drop-shadow-md font-medium">
-                      Documentation
-                    </li>
-                    <li className="drop-shadow-md font-medium">
-                      Training Materials
-                    </li>
+                    
                     <li className="drop-shadow-md font-medium">Support</li>
                   </ul>
                 </div>
@@ -178,13 +173,13 @@ export default function Home() {
                   </h4>
                   <ul className="space-y-2 text-sm text-foreground/85">
                     <li className="drop-shadow-md font-medium">
-                      info@infyRescue.com
+                      info@infyShuraksha.com
                     </li>
                     <li className="drop-shadow-md font-medium">
-                      +1 (555) 123-4567
+                      +91 8923738292
                     </li>
                     <li className="drop-shadow-md font-medium">
-                      Emergency: 911
+                      Emergency: 100
                     </li>
                   </ul>
                 </div>
