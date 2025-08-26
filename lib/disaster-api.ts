@@ -1,9 +1,14 @@
 // Disaster Response API Client
 // Integrates with the FastAPI backend
 
-import { config } from './config';
+import { config } from "./config";
 
+// Use local API routes for authentication, backend for other APIs
 const API_BASE_URL = config.disasterAPI.baseURL;
+const LOCAL_API_BASE_URL =
+  process.env.NODE_ENV === "production"
+    ? "https://your-domain.com"
+    : "http://localhost:3000";
 
 // Types based on the backend API documentation
 export interface User {
@@ -62,7 +67,7 @@ export interface Amenity {
     beds?: number;
     doctors?: number;
     ambulances?: number;
-    [key: string]: any;
+    [key: string]: number | undefined;
   };
   last_updated: string;
 }
@@ -79,7 +84,7 @@ export interface NearbyAmenitiesResponse {
     resources?: {
       beds?: number;
       doctors?: number;
-      [key: string]: any;
+      [key: string]: number | undefined;
     };
   }>;
   total: number;
@@ -142,7 +147,7 @@ export interface RouteRequest {
   end_longitude: number;
   avoid_geojson?: {
     type: string;
-    features: any[];
+    features: Record<string, unknown>[];
   };
   profile?: string;
   preference?: string;
@@ -254,6 +259,102 @@ export interface FloodAlertsResponse {
   total: number;
 }
 
+// Social Media APIs Types
+export interface SocialMediaPost {
+  _id: string;
+  timestamp: string;
+  lat: number;
+  lon: number;
+  message: string;
+  message_type: "sos" | "emergency" | "update" | "general";
+  urgency_level: "low" | "medium" | "high" | "critical";
+  extracted_location: string;
+  hashtags: string[];
+  mentions: string[];
+}
+
+export interface SocialMediaResponse {
+  success: boolean;
+  data: SocialMediaPost[];
+  total: number;
+  limit: number;
+  skip: number;
+  has_more: boolean;
+}
+
+export interface SocialMediaStats {
+  success: boolean;
+  data: {
+    total_posts: number;
+    sos_posts: number;
+    emergency_posts: number;
+    high_urgency_posts: number;
+    critical_urgency_posts: number;
+    posts_last_24h: number;
+    posts_last_hour: number;
+    top_locations: string[];
+    top_hashtags: string[];
+  };
+}
+
+// IVR APIs Types
+export interface IVRRequest {
+  id: string;
+  location: string;
+  flood_area: number;
+  urgency: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  victim_name: string;
+  victim_phone: string;
+  victim_address: string;
+  family_count: number;
+  medical_condition?: string;
+  call_status: "PENDING" | "IN_PROGRESS" | "COMPLETED" | "FAILED";
+  call_attempts: number;
+  last_call_attempt?: string;
+  ivr_response?: string;
+  response_details?: string;
+  created_at: string;
+  updated_at: string;
+  n8n_webhook_sent: boolean;
+  n8n_webhook_response: string;
+}
+
+export interface CreateIVRRequest {
+  location: string;
+  flood_area: number;
+  urgency: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  victim_name: string;
+  victim_phone: string;
+  victim_address: string;
+  family_count: number;
+  medical_condition?: string;
+}
+
+export interface IVRRequestsResponse {
+  success: boolean;
+  data: {
+    requests: IVRRequest[];
+    total: number;
+    limit: number;
+    skip: number;
+    has_more: boolean;
+  };
+}
+
+export interface IVRStats {
+  success: boolean;
+  data: {
+    total_requests: number;
+    pending_requests: number;
+    completed_requests: number;
+    failed_requests: number;
+    high_urgency_requests: number;
+    critical_urgency_requests: number;
+    average_response_time_minutes: number;
+    success_rate_percentage: number;
+  };
+}
+
 // API Client Class
 class DisasterAPIClient {
   private baseURL: string;
@@ -262,24 +363,24 @@ class DisasterAPIClient {
   constructor(baseURL: string = API_BASE_URL) {
     this.baseURL = baseURL;
     // Try to get token from localStorage on initialization
-    if (typeof window !== 'undefined') {
-      this.token = localStorage.getItem('disaster_api_token');
+    if (typeof window !== "undefined") {
+      this.token = localStorage.getItem("disaster_api_token");
     }
   }
 
   // Set authentication token
   setToken(token: string) {
     this.token = token;
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('disaster_api_token', token);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("disaster_api_token", token);
     }
   }
 
   // Clear authentication token
   clearToken() {
     this.token = null;
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('disaster_api_token');
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("disaster_api_token");
     }
   }
 
@@ -291,11 +392,12 @@ class DisasterAPIClient {
   // Get authentication headers
   private getAuthHeaders(): HeadersInit {
     const headers: HeadersInit = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     };
 
+    // Only add auth token if available (optional authentication)
     if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
+      headers["Authorization"] = `Bearer ${this.token}`;
     }
 
     return headers;
@@ -304,9 +406,11 @@ class DisasterAPIClient {
   // Generic API request method
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    customBaseURL?: string
   ): Promise<T> {
-    const url = `${this.baseURL}${endpoint}`;
+    const baseURL = customBaseURL || this.baseURL;
+    const url = `${baseURL}${endpoint}`;
 
     try {
       const response = await fetch(url, {
@@ -319,7 +423,9 @@ class DisasterAPIClient {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(
+          errorData.error || `HTTP ${response.status}: ${response.statusText}`
+        );
       }
 
       return await response.json();
@@ -331,17 +437,25 @@ class DisasterAPIClient {
 
   // Authentication APIs
   async signup(data: SignupRequest): Promise<SignupResponse> {
-    return this.request<SignupResponse>('/auth/signup', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    return this.request<SignupResponse>(
+      "/api/auth/signup",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+      LOCAL_API_BASE_URL
+    );
   }
 
   async login(data: LoginRequest): Promise<LoginResponse> {
-    const response = await this.request<LoginResponse>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    const response = await this.request<LoginResponse>(
+      "/api/auth/login",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+      LOCAL_API_BASE_URL
+    );
 
     // Auto-set token on successful login
     if (response.access_token) {
@@ -352,138 +466,609 @@ class DisasterAPIClient {
   }
 
   async getCurrentUser(): Promise<{ success: boolean; data: User }> {
-    return this.request<{ success: boolean; data: User }>('/auth/me');
+    return this.request<{ success: boolean; data: User }>(
+      "/api/auth/me",
+      {},
+      LOCAL_API_BASE_URL
+    );
   }
 
-  async updateProfile(data: Partial<User>): Promise<{ success: boolean; message: string; data: { user_id: string; updated_fields: string[] } }> {
-    return this.request('/auth/profile', {
-      method: 'PUT',
+  async updateProfile(data: Partial<User>): Promise<{
+    success: boolean;
+    message: string;
+    data: { user_id: string; updated_fields: string[] };
+  }> {
+    return this.request("/auth/profile", {
+      method: "PUT",
       body: JSON.stringify(data),
     });
   }
 
   // Route Finder APIs
   async findRoute(data: RouteRequest): Promise<RouteResponse> {
-    return this.request<RouteResponse>('/route-finder/route', {
-      method: 'POST',
+    return this.request<RouteResponse>(
+      "/api/route-finder/find-route",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+      LOCAL_API_BASE_URL
+    );
+  }
+
+  async getRouteAlternatives(
+    data: RouteRequest & { alternatives: number }
+  ): Promise<{
+    success: boolean;
+    alternatives: Array<{
+      route: Record<string, unknown>;
+      distance_km: number;
+      duration_minutes: number;
+    }>;
+  }> {
+    return this.request("/route-finder/alternatives", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   }
 
-  async getRouteAlternatives(data: RouteRequest & { alternatives: number }): Promise<{ success: boolean; alternatives: Array<{ route: any; distance_km: number; duration_minutes: number }> }> {
-    return this.request('/route-finder/alternatives', {
-      method: 'POST',
-      body: JSON.stringify(data),
+  async validateGeoJSON(geojson: Record<string, unknown>): Promise<{
+    success: boolean;
+    data: {
+      is_valid: boolean;
+      distance_km: number;
+      estimated_duration_minutes: number;
+      flood_risk_level: string;
+      warnings: string[];
+    };
+  }> {
+    return this.request("/route-finder/validate-geojson", {
+      method: "POST",
+      body: JSON.stringify({ geojson }),
     });
   }
 
   // SAR Analysis APIs
   async analyzeSAR(data: SARAnalysisRequest): Promise<SARAnalysisResponse> {
-    return this.request<SARAnalysisResponse>('/sar-analysis/analyze', {
-      method: 'POST',
+    return this.request<SARAnalysisResponse>("/sar-analysis/analyze", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   }
 
-  async getAvailableSARImages(): Promise<{ success: boolean; images: Array<{ filename: string; date: string; size_mb: number; coverage: { min_lat: number; max_lat: number; min_lon: number; max_lon: number } }> }> {
-    return this.request('/sar-analysis/available-images');
+  async getAvailableSARImages(): Promise<{
+    success: boolean;
+    images: Array<{
+      filename: string;
+      date: string;
+      size_mb: number;
+      coverage: {
+        min_lat: number;
+        max_lat: number;
+        min_lon: number;
+        max_lon: number;
+      };
+    }>;
+  }> {
+    return this.request("/sar-analysis/available-images");
   }
 
-  async getSARHistory(limit?: number, skip?: number): Promise<{ success: boolean; analyses: Array<{ id: string; before_date: string; after_date: string; water_change_percentage: number; severity_level: string; created_at: string }>; total: number; has_more: boolean }> {
+  async getAvailableSARDates(): Promise<{
+    success: boolean;
+    data: { available_dates: string[]; total_files: number };
+  }> {
+    return this.request("/sar-analysis/available-dates");
+  }
+
+  async compareSARImages(data: {
+    date1: string;
+    date2: string;
+    latitude: number;
+    longitude: number;
+    radius_km: number;
+  }): Promise<{
+    success: boolean;
+    data: {
+      analysis_id: string;
+      date1: string;
+      date2: string;
+      water_change_percentage: number;
+      affected_area_km2: number;
+      confidence_score: number;
+      geojson: Record<string, unknown>;
+      created_at: string;
+    };
+  }> {
+    return this.request("/sar-analysis/compare", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getSARHistory(
+    limit?: number,
+    skip?: number
+  ): Promise<{
+    success: boolean;
+    analyses: Array<{
+      id: string;
+      before_date: string;
+      after_date: string;
+      water_change_percentage: number;
+      severity_level: string;
+      created_at: string;
+    }>;
+    total: number;
+    has_more: boolean;
+  }> {
     const params = new URLSearchParams();
-    if (limit) params.append('limit', limit.toString());
-    if (skip) params.append('skip', skip.toString());
+    if (limit) params.append("limit", limit.toString());
+    if (skip) params.append("skip", skip.toString());
 
     return this.request(`/sar-analysis/history?${params}`);
   }
 
+  async getLatest3SARAnalysis(): Promise<{
+    success: boolean;
+    data: Array<Record<string, unknown>>;
+  }> {
+    return this.request("/sar-analysis/latest-3-analysis");
+  }
+
   // Flood Prediction APIs
-  async predictFlood(data: FloodPredictionRequest): Promise<FloodPredictionResponse> {
-    return this.request<FloodPredictionResponse>('/flood-prediction/predict', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+  async predictFlood(
+    data: FloodPredictionRequest
+  ): Promise<FloodPredictionResponse> {
+    return this.request<FloodPredictionResponse>(
+      "/api/flood-prediction/predict",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+      LOCAL_API_BASE_URL
+    );
   }
 
-  async getFloodAlerts(severity?: string, district?: string, limit?: number): Promise<FloodAlertsResponse> {
+  async predictFloodAdvanced(
+    data: FloodPredictionRequest
+  ): Promise<FloodPredictionResponse> {
+    return this.request<FloodPredictionResponse>(
+      "/api/flood-prediction/predict-advanced",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+      LOCAL_API_BASE_URL
+    );
+  }
+
+  async getFloodPredictionHistory(
+    limit?: number
+  ): Promise<{ success: boolean; data: Array<Record<string, unknown>> }> {
     const params = new URLSearchParams();
-    if (severity) params.append('severity', severity);
-    if (district) params.append('district', district);
-    if (limit) params.append('limit', limit.toString());
+    if (limit) params.append("limit", limit.toString());
 
-    return this.request<FloodAlertsResponse>(`/flood-prediction/alerts?${params}`);
+    return this.request(`/flood-prediction/history?${params}`);
   }
 
-  async createFloodAlert(data: Omit<FloodAlert, 'id' | 'created_at'>): Promise<{ success: boolean; message: string; data: { alert_id: string; created_at: string } }> {
-    return this.request('/flood-prediction/alerts', {
-      method: 'POST',
+  async getFloodPredictionStats(): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      total_predictions: number;
+      high_risk_predictions: number;
+      average_flood_probability: number;
+      high_risk_percentage: number;
+    };
+  }> {
+    return this.request("/flood-prediction/stats");
+  }
+
+  async getLatestSARFiles(): Promise<{
+    success: boolean;
+    data: {
+      available_files: number;
+      latest_date: string;
+      file_info: Array<{
+        filename: string;
+        date: string;
+        size_mb: number;
+        coverage_area: string;
+      }>;
+    };
+  }> {
+    return this.request("/flood-prediction/latest-sar-files");
+  }
+
+  async getFloodAlerts(
+    severity?: string,
+    district?: string,
+    limit?: number
+  ): Promise<FloodAlertsResponse> {
+    const params = new URLSearchParams();
+    if (severity) params.append("severity", severity);
+    if (district) params.append("district", district);
+    if (limit) params.append("limit", limit.toString());
+
+    return this.request<FloodAlertsResponse>(
+      `/api/flood-prediction/alerts?${params}`,
+      {},
+      LOCAL_API_BASE_URL
+    );
+  }
+
+  async createFloodAlert(data: Omit<FloodAlert, "id" | "created_at">): Promise<{
+    success: boolean;
+    message: string;
+    data: { alert_id: string; created_at: string };
+  }> {
+    return this.request("/flood-prediction/alerts", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   }
 
   // Amenities APIs
-  async getAmenities(amenity_type?: string, status?: string, limit?: number, skip?: number): Promise<{ success: boolean; data: Amenity[]; total: number; limit: number; skip: number; has_more: boolean }> {
+  async getAmenities(
+    amenity_type?: string,
+    status?: string,
+    limit?: number,
+    skip?: number
+  ): Promise<{
+    success: boolean;
+    data: Amenity[];
+    total: number;
+    limit: number;
+    skip: number;
+    has_more: boolean;
+  }> {
     const params = new URLSearchParams();
-    if (amenity_type) params.append('amenity_type', amenity_type);
-    if (status) params.append('status', status);
-    if (limit) params.append('limit', limit.toString());
-    if (skip) params.append('skip', skip.toString());
+    if (amenity_type) params.append("amenity_type", amenity_type);
+    if (status) params.append("status", status);
+    if (limit) params.append("limit", limit.toString());
+    if (skip) params.append("skip", skip.toString());
 
-    return this.request(`/amenities?${params}`);
+    return this.request(`/api/amenities?${params}`, {}, LOCAL_API_BASE_URL);
   }
 
-  async getNearbyAmenities(latitude: number, longitude: number, radius_km?: number, amenity_type?: string, limit?: number): Promise<NearbyAmenitiesResponse> {
+  async getNearbyAmenities(
+    latitude: number,
+    longitude: number,
+    radius_km?: number,
+    amenity_type?: string,
+    limit?: number
+  ): Promise<NearbyAmenitiesResponse> {
     const params = new URLSearchParams({
       latitude: latitude.toString(),
       longitude: longitude.toString(),
     });
-    if (radius_km) params.append('radius_km', radius_km.toString());
-    if (amenity_type) params.append('amenity_type', amenity_type);
-    if (limit) params.append('limit', limit.toString());
+    if (radius_km) params.append("radius_km", radius_km.toString());
+    if (amenity_type) params.append("amenity_type", amenity_type);
+    if (limit) params.append("limit", limit.toString());
 
-    return this.request<NearbyAmenitiesResponse>(`/amenities/nearby?${params}`);
+    return this.request<NearbyAmenitiesResponse>(
+      `/api/amenities/nearby?${params}`,
+      {},
+      LOCAL_API_BASE_URL
+    );
   }
 
-  async getAmenityDetails(amenity_id: string): Promise<{ success: boolean; data: Amenity & { address?: string; contact?: string; operating_hours?: string } }> {
-    return this.request(`/amenities/${amenity_id}`);
+  async getAmenityDetails(amenity_id: string): Promise<{
+    success: boolean;
+    data: Amenity & {
+      address?: string;
+      contact?: string;
+      operating_hours?: string;
+    };
+  }> {
+    return this.request(`/api/amenities/${amenity_id}`, {}, LOCAL_API_BASE_URL);
+  }
+
+  async getAmenitiesStats(): Promise<{
+    success: boolean;
+    data: {
+      total_amenities: number;
+      operational_amenities: number;
+      hospitals: number;
+      schools: number;
+      police_stations: number;
+      fire_stations: number;
+      shelters: number;
+      average_distance_km: number;
+    };
+  }> {
+    return this.request("/api/amenities/stats", {}, LOCAL_API_BASE_URL);
   }
 
   // Relief Centers APIs
-  async getReliefCenters(district?: string, active_only?: boolean): Promise<ReliefCentersResponse> {
+  async getReliefCenters(
+    district?: string,
+    active_only?: boolean
+  ): Promise<ReliefCentersResponse> {
     const params = new URLSearchParams();
-    if (district) params.append('district', district);
-    if (active_only !== undefined) params.append('active_only', active_only.toString());
+    if (district) params.append("district", district);
+    if (active_only !== undefined)
+      params.append("active_only", active_only.toString());
 
-    return this.request<ReliefCentersResponse>(`/relief-centers?${params}`);
+    return this.request<ReliefCentersResponse>(
+      `/api/relief-centers?${params}`,
+      {},
+      LOCAL_API_BASE_URL
+    );
   }
 
-  async createReliefCenter(data: Omit<ReliefCenter, 'id' | 'created_at' | 'updated_at'>): Promise<{ success: boolean; id: string; [key: string]: any }> {
-    return this.request('/relief-centers', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+  async createReliefCenter(
+    data: Omit<ReliefCenter, "id" | "created_at" | "updated_at">
+  ): Promise<{ success: boolean; id: string; [key: string]: unknown }> {
+    return this.request(
+      "/api/relief-centers",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+      LOCAL_API_BASE_URL
+    );
   }
 
-  async updateReliefCenter(center_id: string, data: Partial<ReliefCenter>): Promise<{ success: boolean; message: string; data: { center_id: string; updated_fields: string[] } }> {
+  async updateReliefCenter(
+    center_id: string,
+    data: Partial<ReliefCenter>
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data: { center_id: string; updated_fields: string[] };
+  }> {
     return this.request(`/relief-centers/${center_id}`, {
-      method: 'PUT',
+      method: "PUT",
       body: JSON.stringify(data),
     });
   }
 
-  async getReliefCenterDetails(center_id: string): Promise<{ success: boolean; data: ReliefCenter }> {
+  async getReliefCenterDetails(
+    center_id: string
+  ): Promise<{ success: boolean; data: ReliefCenter }> {
     return this.request(`/relief-centers/${center_id}`);
   }
 
-  async getNearbyReliefCenters(latitude: number, longitude: number, radius_km?: number, limit?: number): Promise<NearbyReliefCentersResponse> {
-    const params = new URLSearchParams({
-      latitude: latitude.toString(),
-      longitude: longitude.toString(),
-    });
-    if (radius_km) params.append('radius_km', radius_km.toString());
-    if (limit) params.append('limit', limit.toString());
+  async getNearbyReliefCenters(
+    latitude: number,
+    longitude: number,
+    radius_km?: number,
+    limit?: number
+  ): Promise<NearbyReliefCentersResponse> {
+    const params = new URLSearchParams();
+    if (limit) params.append("limit", limit.toString());
 
-    return this.request<NearbyReliefCentersResponse>(`/relief-centers/nearby?${params}`);
+    return this.request<NearbyReliefCentersResponse>(
+      `/api/relief-centers/nearby?${params}`,
+      {},
+      LOCAL_API_BASE_URL
+    );
+  }
+
+  async updateReliefCenterOccupancy(
+    center_id: string,
+    data: {
+      current_occupancy: number;
+      resources_used?: {
+        food_packages?: number;
+        water_bottles?: number;
+        medical_kits?: number;
+        blankets?: number;
+      };
+    }
+  ): Promise<{ success: boolean; data: ReliefCenter }> {
+    return this.request(`/relief-centers/${center_id}/occupancy`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getReliefCenterStats(): Promise<{
+    success: boolean;
+    data: {
+      total_centers: number;
+      active_centers: number;
+      full_centers: number;
+      total_capacity: number;
+      total_occupancy: number;
+      average_occupancy_percentage: number;
+      total_resources: {
+        food_packages: number;
+        water_bottles: number;
+        medical_kits: number;
+        blankets: number;
+      };
+    };
+  }> {
+    return this.request("/relief-centers/stats/summary");
+  }
+
+  // Social Media APIs
+  async getSocialMediaPosts(
+    message_type?: string,
+    urgency_level?: string,
+    location?: string,
+    limit?: number,
+    skip?: number
+  ): Promise<SocialMediaResponse> {
+    const params = new URLSearchParams();
+    if (message_type) params.append("message_type", message_type);
+    if (urgency_level) params.append("urgency_level", urgency_level);
+    if (location) params.append("location", location);
+    if (limit) params.append("limit", limit.toString());
+    if (skip) params.append("skip", skip.toString());
+
+    return this.request<SocialMediaResponse>(
+      `/api/social-media/posts?${params}`,
+      {},
+      LOCAL_API_BASE_URL
+    );
+  }
+
+  async getSOSMessages(
+    limit?: number,
+    skip?: number
+  ): Promise<SocialMediaResponse> {
+    const params = new URLSearchParams();
+    if (limit) params.append("limit", limit.toString());
+    if (skip) params.append("skip", skip.toString());
+
+    params.append("message_type", "sos");
+    return this.request<SocialMediaResponse>(
+      `/api/social-media/posts?${params}`,
+      {},
+      LOCAL_API_BASE_URL
+    );
+  }
+
+  async getSocialMediaPostsNearby(
+    latitude: number,
+    longitude: number,
+    radius_km?: number,
+    limit?: number
+  ): Promise<SocialMediaResponse> {
+    const params = new URLSearchParams();
+    if (limit) params.append("limit", limit.toString());
+
+    return this.request<SocialMediaResponse>(
+      `/api/social-media/posts?${params}`,
+      {},
+      LOCAL_API_BASE_URL
+    );
+  }
+
+  async getSocialMediaPostsByTimeRange(
+    start_time: string,
+    end_time: string,
+    message_type?: string,
+    urgency_level?: string,
+    location?: string,
+    limit?: number,
+    skip?: number
+  ): Promise<SocialMediaResponse> {
+    const params = new URLSearchParams();
+    if (message_type) params.append("message_type", message_type);
+    if (urgency_level) params.append("urgency_level", urgency_level);
+    if (location) params.append("location", location);
+    if (limit) params.append("limit", limit.toString());
+    if (skip) params.append("skip", skip.toString());
+
+    return this.request<SocialMediaResponse>(
+      `/api/social-media/posts?${params}`,
+      {},
+      LOCAL_API_BASE_URL
+    );
+  }
+
+  async getRecentSocialMediaPosts(
+    hours?: number,
+    message_type?: string,
+    urgency_level?: string,
+    limit?: number
+  ): Promise<SocialMediaResponse> {
+    const params = new URLSearchParams();
+    if (message_type) params.append("message_type", message_type);
+    if (urgency_level) params.append("urgency_level", urgency_level);
+    if (limit) params.append("limit", limit.toString());
+
+    return this.request<SocialMediaResponse>(
+      `/api/social-media/posts?${params}`,
+      {},
+      LOCAL_API_BASE_URL
+    );
+  }
+
+  async getSocialMediaStats(): Promise<SocialMediaStats> {
+    return this.request<SocialMediaStats>(
+      "/api/social-media/stats",
+      {},
+      LOCAL_API_BASE_URL
+    );
+  }
+
+  // IVR APIs
+  async createIVRRequest(data: CreateIVRRequest): Promise<IVRRequest> {
+    try {
+      return this.request<IVRRequest>("/ivr/requests", {
+        method: "POST",
+        body: JSON.stringify(data),
+      });
+    } catch {
+      // Fallback to local API
+      const response = await fetch("/api/ivr/requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      return await response.json();
+    }
+  }
+
+  async updateIVRStatus(
+    request_id: string,
+    data: { call_status: string; ivr_response?: string; call_attempts?: number }
+  ): Promise<IVRRequest> {
+    return this.request<IVRRequest>(`/ivr/requests/${request_id}/status`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getIVRRequests(
+    status?: string,
+    urgency?: string,
+    limit?: number,
+    skip?: number
+  ): Promise<IVRRequestsResponse> {
+    const params = new URLSearchParams();
+    if (status) params.append("status", status);
+    if (urgency) params.append("urgency", urgency);
+    if (limit) params.append("limit", limit.toString());
+    if (skip) params.append("skip", skip.toString());
+
+    return this.request<IVRRequestsResponse>(
+      `/api/ivr/requests?${params}`,
+      {},
+      LOCAL_API_BASE_URL
+    );
+  }
+
+  async getUrgentIVRRequests(
+    limit?: number
+  ): Promise<{ success: boolean; data: IVRRequest[] }> {
+    const params = new URLSearchParams();
+    if (limit) params.append("limit", limit.toString());
+
+    const urgentParams = new URLSearchParams();
+    urgentParams.append("urgency", "CRITICAL");
+    if (limit) urgentParams.append("limit", limit.toString());
+
+    const response = await this.request<IVRRequestsResponse>(
+      `/api/ivr/requests?${urgentParams}`,
+      {},
+      LOCAL_API_BASE_URL
+    );
+    return {
+      success: true,
+      data: response.success ? response.data.requests : [],
+    };
+  }
+
+  async getIVRRequest(
+    request_id: string
+  ): Promise<{ success: boolean; data: IVRRequest }> {
+    return this.request(`/ivr/requests/${request_id}`);
+  }
+
+  async getIVRStats(): Promise<IVRStats> {
+    return this.request<IVRStats>("/api/ivr/stats", {}, LOCAL_API_BASE_URL);
+  }
+
+  async retryIVRCall(request_id: string): Promise<IVRRequest> {
+    return this.request<IVRRequest>(`/ivr/requests/${request_id}/retry`, {
+      method: "POST",
+    });
   }
 }
 
@@ -492,13 +1077,13 @@ export const disasterAPI = new DisasterAPIClient();
 
 // Helper functions
 export const isAuthenticated = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  return !!localStorage.getItem('disaster_api_token');
+  if (typeof window === "undefined") return false;
+  return !!localStorage.getItem("disaster_api_token");
 };
 
 export const getStoredToken = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('disaster_api_token');
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("disaster_api_token");
 };
 
 // Error handling utilities
@@ -506,10 +1091,10 @@ export class APIError extends Error {
   constructor(
     message: string,
     public statusCode?: number,
-    public details?: any
+    public details?: unknown
   ) {
     super(message);
-    this.name = 'APIError';
+    this.name = "APIError";
   }
 }
 

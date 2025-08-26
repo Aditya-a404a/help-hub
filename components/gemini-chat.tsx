@@ -4,67 +4,9 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Send, Bot, User, X, Clock, Users, Package, Shield, Radio, AlertTriangle, CheckCircle } from 'lucide-react';
-
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-}
-
-interface DisasterAlert {
-  id: string;
-  type: string;
-  severity: string;
-  location: string;
-  description: string;
-  affectedPopulation: number;
-  timestamp: string;
-  status: string;
-}
-
-interface ResponseTeam {
-  id: string;
-  name: string;
-  type: string;
-  location: string;
-  status: string;
-  personnel: number;
-  vehicles: number;
-  specializations: string[];
-  contact: string;
-  lastUpdate: string;
-}
-
-interface ResourceInventory {
-  id: string;
-  category: string;
-  item: string;
-  quantity: number;
-  unit: string;
-  location: string;
-  status: string;
-  priority: string;
-  expiryDate?: string;
-}
-
-interface CommunicationChannel {
-  id: string;
-  type: string;
-  status: string;
-  coverage: string;
-  uptime: number;
-  lastTest: string;
-  backup: boolean;
-}
-
-interface RescueStatus {
-  phase: 'preparing' | 'deploying' | 'responding' | 'rescuing' | 'stabilizing' | 'completed';
-  teamsDeployed: number;
-  peopleRescued: number;
-  lastUpdate: Date;
-  estimatedCompletion?: Date;
-}
+import { Loader2, Send, Bot, User, X, MapPin, MessageSquare } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
+import { DisasterAlert, ResponseTeam, ResourceInventory, CommunicationChannel, RescueStatus, Message } from '@/lib/types';
 
 interface GeminiChatProps {
   incident?: DisasterAlert;
@@ -80,6 +22,8 @@ export default function GeminiChat({ incident, responseTeams = [], resourceInven
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [rescueStatus, setRescueStatus] = useState<RescueStatus | null>(null);
+  const [mcpToolsActive, setMcpToolsActive] = useState(false);
+  const t = useTranslation();
 
   // Auto-send rescue strategy prompt when incident is provided
   useEffect(() => {
@@ -280,12 +224,41 @@ ${activeCommunications.map(comm => `
     setIsLoading(true);
 
     try {
+      // Prepare MCP context if incident data is available
+      const mcpContext = incident ? {
+        incident: {
+          id: incident.id,
+          type: incident.type,
+          severity: incident.severity,
+          description: incident.description,
+          affectedPopulation: incident.affectedPopulation,
+          location: incident.location,
+          coordinates: [80.2707, 13.0827] // Default Chennai coordinates
+        },
+        teams: responseTeams,
+        resources: resourceInventory,
+        communications: communicationChannels
+      } : null;
+
+      // Determine if this is a rescue strategy request
+      const useRescueStrategy = incident && (
+        message.includes('rescue strategy') || 
+        message.includes('emergency response') ||
+        messageToSend // Auto-generated rescue prompt
+      );
+
+      setMcpToolsActive(!!mcpContext);
+
       const response = await fetch('/api/gemini', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt: input }),
+        body: JSON.stringify({ 
+          prompt: message,
+          mcpContext,
+          useRescueStrategy
+        }),
       });
 
       if (!response.ok) {
@@ -301,11 +274,22 @@ ${activeCommunications.map(comm => `
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+
+      // Update rescue status if this was a rescue strategy
+      if (useRescueStrategy && incident) {
+        setRescueStatus({
+          phase: 'preparing',
+          teamsDeployed: responseTeams.filter(t => t.status === 'deployed').length,
+          peopleRescued: 0,
+          lastUpdate: new Date(),
+          estimatedCompletion: new Date(Date.now() + (2 * 60 * 60 * 1000)) // 2 hours from now
+        });
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       const errorMessage: Message = {
         role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.',
+        content: t.error + ' ' + t.tryAgain,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -398,7 +382,14 @@ ${activeCommunications.map(comm => `
       <CardHeader className="relative">
         <CardTitle className="flex items-center gap-2">
           <Bot className="h-5 w-5" />
-          {incident ? `Rescue Strategy - ${incident.type.charAt(0).toUpperCase() + incident.type.slice(1)} Emergency` : 'Gemini AI Chat'}
+          {incident ? `${t.rescueStrategy} - ${incident.type.charAt(0).toUpperCase() + incident.type.slice(1)} ${t.emergency}` : t.chatTitle}
+          {mcpToolsActive && (
+            <div className="flex items-center gap-1 ml-2" title="MCP Tools Active">
+              <MapPin className="h-4 w-4 text-blue-500" />
+              <MessageSquare className="h-4 w-4 text-green-500" />
+              <span className="text-xs text-muted-foreground">MCP</span>
+            </div>
+          )}
         </CardTitle>
 
         {/* Rescue Status Display */}
@@ -443,7 +434,7 @@ ${activeCommunications.map(comm => `
         <div className="h-96 overflow-y-auto space-y-4 p-4 border rounded-lg bg-gray-50 dark:bg-gray-900">
           {messages.length === 0 ? (
             <div className="text-center text-gray-500 dark:text-gray-400">
-              {incident ? 'Generating rescue strategy...' : 'Start a conversation with Gemini AI'}
+              {incident ? `${t.loading} ${t.rescueStrategy.toLowerCase()}...` : `${t.chatTitle} - ${t.typeMessage}`}
             </div>
           ) : (
             messages.map((message, index) => (
@@ -504,7 +495,7 @@ ${activeCommunications.map(comm => `
               <div className="px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border">
                 <div className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Thinking...</span>
+                  <span>{t.loading}</span>
                 </div>
               </div>
             </div>
@@ -519,7 +510,7 @@ ${activeCommunications.map(comm => `
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder={incident ? "Ask follow-up questions about the rescue strategy..." : "Ask Gemini anything..."}
+                placeholder={incident ? t.chatPlaceholder : t.typeMessage}
                 disabled={isLoading}
                 className="flex-1"
               />

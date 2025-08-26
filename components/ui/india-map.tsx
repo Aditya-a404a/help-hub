@@ -62,16 +62,17 @@ export default function IndiaMap({
 
   return (
     <div ref={containerRef} className={`relative w-full h-full ${className}`}>
-      {/* India Map SVG Background */}
-      <div
-        className="absolute inset-0 opacity-90"
-        style={{
-          backgroundImage: `url("/india-map.svg")`,
-          backgroundSize: "contain",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
-      />
+              {/* India Map SVG Background */}
+        <div
+          className="absolute inset-0 opacity-90"
+          style={{
+            backgroundImage: `url("/india-map.svg")`,
+            backgroundSize: "contain",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            filter: "drop-shadow(0 0 8px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 16px rgba(255, 255, 255, 0.6))",
+          }}
+        />
 
       {/* Emergency Location Markers - Only show if locations are provided */}
       {locations.length > 0 && locations.map((location) => (
